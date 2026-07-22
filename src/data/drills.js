@@ -1081,3 +1081,6 @@ export function checkInput(input, accept) {
 export function poolFor(game) {
   return drills.filter((d) => d.modes.includes(game));
 }
+export function drillById(id) {
+  return drills.find((drill) => drill.id === id) || null;
+}

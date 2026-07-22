@@ -19,6 +19,8 @@ import { RouterLink } from "vue-router";
           <RouterLink to="/reference">指令手冊</RouterLink>
           <RouterLink to="/game">闖關</RouterLink>
           <RouterLink to="/practice">練習題庫</RouterLink>
+          <RouterLink to="/favorites">收藏剪報</RouterLink>
+          <RouterLink to="/mistakes">錯題簿</RouterLink>
         </div>
         <div>
           <h5>主題</h5>
@@ -29,12 +31,12 @@ import { RouterLink } from "vue-router";
         <div>
           <h5>讀者</h5>
           <a href="#">指令搜尋</a>
-          <a href="#">收藏</a>
+          <RouterLink to="/favorites">收藏</RouterLink>
           <a href="#">無障礙</a>
         </div>
       </div>
       <div class="footer__bottom">
-        <span>© 2026 Git Daily — The Morning Paper Edition</span>
+        <span>© 2026 Git Daily · Made by 7lun</span>
         <span>Set in Playfair Display, Noto Serif TC &amp; JetBrains Mono</span>
       </div>
     </div>

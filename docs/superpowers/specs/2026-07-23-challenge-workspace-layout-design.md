@@ -21,23 +21,26 @@
 ┌────────────────────────────────────────────────────────────────┐
 │ Challenge header：標題、XP、完成進度（緊湊高度）               │
 ├──────────────┬───────────────────────────┬─────────────────────┤
-│ Roadmap      │ Challenge Brief           │ Editor's Desk       │
-│ 220px        │ 精簡情境與提示             │ 永久可見             │
-│              ├───────────────────────────┼─────────────────────┤
-│              │ Final steps（需要時）      │ Visualization tabs  │
-│              ├───────────────────────────┤ Workflow｜Graph｜   │
-│              │ Terminal                  │ Timeline            │
-└──────────────┴───────────────────────────┴─────────────────────┘
+│ Chapter selector + horizontally scrolling Challenge Roadmap   │
+├────────────────────────────────┬───────────────────────────────┤
+│ Challenge Brief                │ Editor's Desk                 │
+│ Final steps（需要時）           │ Visualization tabs            │
+│ Terminal                       │ Workflow｜Graph｜Timeline     │
+└────────────────────────────────┴───────────────────────────────┘
 ```
 
-- 欄寬：左欄約 `220px`，中欄 `minmax(560px, 1fr)`，右欄約 `380–420px`。
+- 下方欄寬：主操作區約 `65%`，教學視覺化約 `35%`。
 - 頁首減少上下留白，避免擠壓主要互動區。
 - 中間與右側內容的起點對齊。
 - 首屏以 900–1000px 高度為驗收基準，Terminal 輸入列與 Editor's Desk 必須可見。
 
 ## Challenge Roadmap
 
-- 只展開目前 Chapter，其餘 Chapter 預設收合。
+- Roadmap 放在工作區上方，不佔用左側直欄。
+- 第一列為 Chapter selector；第二列只顯示所選 Chapter 的關卡。
+- 第二列可以橫向滑動，並提供低調的上一頁／下一頁文字箭頭。
+- 目前關卡變更時，自動將該關卡捲動到可見位置。
+- 玩家可以切換 Chapter，回顧已完成關卡；未解鎖關卡仍不可進入。
 - 關卡列只顯示：狀態、Challenge 編號、中英文名稱。
 - 移除每關中文摘要，詳細故事只在中間 Brief 顯示。
 - 目前關卡狀態優先：使用橘色左線、淡橘底與深色文字。
@@ -93,8 +96,8 @@
 
 ## 響應式
 
-- `1080px` 以下改為單欄順序：Challenge Brief → Terminal → Editor's Desk → Visualization tabs → Roadmap。
-- 手機 Roadmap 放在頁面下方或收合區，不阻擋主要操作。
+- `1080px` 以下改為單欄順序：Roadmap → Challenge Brief → Terminal → Editor's Desk → Visualization tabs。
+- 手機 Roadmap 保持橫向滑動，不展開成長列表。
 - 平板與手機不使用 sticky，避免多個容器競爭捲動。
 - 保留 `prefers-reduced-motion` 支援。
 

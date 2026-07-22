@@ -17,6 +17,8 @@ const route = useRoute();
         <RouterLink to="/reference" :class="{ active: route.name === 'reference' || route.name === 'command' }">手冊</RouterLink>
         <RouterLink to="/game" :class="{ active: route.name === 'game' }">闖關</RouterLink>
         <RouterLink to="/practice" :class="{ active: route.name === 'practice' }">練習</RouterLink>
+        <RouterLink to="/favorites" :class="{ active: route.name === 'favorites' }">收藏</RouterLink>
+        <RouterLink to="/mistakes" :class="{ active: route.name === 'mistakes' }">錯題簿</RouterLink>
         <button
           class="icon-btn"
           :aria-label="store.theme === 'dark' ? 'Switch to light mode 切換淺色' : 'Switch to dark mode 切換深色'"

@@ -1,9 +1,12 @@
 <script setup>
-import { ref, computed, nextTick } from "vue";
+import { ref, computed, nextTick, onMounted } from "vue";
 import { RouterLink } from "vue-router";
-import { drills, poolFor, checkInput } from "../data/drills.js";
+import { useRoute } from "vue-router";
+import { drills, poolFor, checkInput, drillById } from "../data/drills.js";
 import { bySlug } from "../data/commands.js";
-import { addXp, toast } from "../composables/useStore.js";
+import { store, addXp, toast, recordMistake, resolveMistake } from "../composables/useStore.js";
+
+const route = useRoute();
 
 // A review row links to the reference only when that command has an article.
 const articleSlug = (cmd) => {
@@ -26,8 +29,10 @@ const chosen = ref(null);
 const inputVal = ref("");
 const inputEl = ref(null);
 const showHint = ref(false);
+const showSyntaxHint = ref(false);
 
 const current = computed(() => session.value[index.value]);
+const currentMode = computed(() => current.value?._mode || game.value);
 const progress = computed(() => Math.round(((index.value + (answered.value ? 1 : 0)) / session.value.length) * 100));
 const isLast = computed(() => index.value === session.value.length - 1);
 
@@ -46,8 +51,33 @@ function start(which) {
   const picked = shuffle(pool).slice(0, Math.min(SESSION_SIZE, pool.length));
   session.value = picked.map((q) => ({
     ...q,
+    _mode: which,
     _options: which === "choice" ? shuffle([q.solution, ...q.distractors]) : null,
   }));
+  index.value = 0;
+  score.value = 0;
+  results.value = [];
+  resetQuestion();
+  phase.value = "quiz";
+}
+
+function startMistakes() {
+  const retryQuestions = store.mistakes.map((mistake) => {
+    const drill = drillById(mistake.drillId);
+    if (!drill) return null;
+    return {
+      ...drill,
+      _mode: mistake.mode,
+      _mistakeId: mistake.id,
+      _options: mistake.mode === "choice" ? shuffle([drill.solution, ...drill.distractors]) : null,
+    };
+  }).filter(Boolean);
+  if (!retryQuestions.length) {
+    toast("錯題簿是空的", "先完成一般練習，答錯的題目會自動收進錯題簿。", "warn");
+    return;
+  }
+  game.value = "mistakes";
+  session.value = shuffle(retryQuestions);
   index.value = 0;
   score.value = 0;
   results.value = [];
@@ -61,7 +91,8 @@ function resetQuestion() {
   chosen.value = null;
   inputVal.value = "";
   showHint.value = false;
-  if (game.value === "input") nextTick(() => inputEl.value?.focus());
+  showSyntaxHint.value = false;
+  if (currentMode.value === "input") nextTick(() => inputEl.value?.focus());
 }
 
 function answerChoice(opt) {
@@ -83,7 +114,22 @@ function submitInput() {
 
 function finishQuestion(given) {
   answered.value = true;
-  if (wasCorrect.value) score.value++;
+  if (wasCorrect.value) {
+    score.value++;
+    if (game.value === "mistakes") resolveMistake(current.value._mistakeId);
+  } else {
+    recordMistake({
+      id: current.value._mistakeId || `${currentMode.value}:${current.value.id}`,
+      drillId: current.value.id,
+      mode: currentMode.value,
+      cmd: current.value.cmd,
+      scenario: current.value.scenario.zh,
+      given,
+      solution: current.value.solution,
+      explanation: current.value.note.zh,
+      answeredAt: new Date().toISOString(),
+    });
+  }
   results.value.push({ q: current.value, correct: wasCorrect.value, given });
 }
 
@@ -104,6 +150,15 @@ function backToSelect() {
   game.value = null;
 }
 
+function restartRound() {
+  if (game.value === "mistakes") startMistakes();
+  else start(game.value);
+}
+
+onMounted(() => {
+  if (route.query.mode === "mistakes") startMistakes();
+});
+
 const wrongOnes = computed(() => results.value.filter((r) => !r.correct));
 const grade = computed(() => {
   const pct = score.value / session.value.length;
@@ -118,40 +173,38 @@ const inputCount = poolFor("input").length;
 </script>
 
 <template>
-  <div class="wrap practice">
+  <div class="wrap practice practice-edition">
     <!-- ===================== SELECT ===================== -->
     <template v-if="phase === 'select'">
       <header class="pr-head reveal">
-        <p class="eyebrow">Practice · 練習題庫</p>
-        <h1 class="pr-title">Two Ways to Drill.</h1>
-        <p class="u-serif pr-sub">兩種遊戲，練到記住為止。每回合隨機抽 {{ SESSION_SIZE }} 題，答完給你正解與說明。</p>
+        <div class="practice-kicker"><span>Weekend Practice Edition</span><b>週末練習專刊</b></div>
+        <h1 class="pr-title">Practice Room</h1>
+        <p class="pr-title-zh">練習場</p>
+        <p class="u-serif pr-sub">選一種方式開始。每回合隨機抽出 {{ SESSION_SIZE }} 題，答題後立即閱讀正解與說明。</p>
       </header>
 
-      <div class="game-cards">
-        <button class="game-card reveal" @click="start('choice')">
-          <span class="game-card__kicker">Game A · 遊戲 A</span>
-          <span class="game-card__mark" aria-hidden="true">◉</span>
-          <h2>Multiple Choice</h2>
-          <p class="u-serif">選擇題</p>
+      <div class="practice-modes">
+        <button class="practice-mode reveal" @click="start('choice')">
+          <span class="game-card__kicker">01 · Build Recognition</span>
+          <h2>選擇題</h2>
+          <p class="mode-en">Multiple Choice</p>
           <p class="game-card__desc">讀情境，從四個指令中挑對的。最適合剛入門、建立語感。</p>
           <div class="game-card__meta">
-            <span class="badge badge--success"><span class="dot"></span>Beginner 入門</span>
-            <span class="u-mono">{{ choiceCount }} questions</span>
+            <span>入門</span><b>{{ choiceCount }} 題</b>
           </div>
-          <span class="game-card__cta">Start · 開始 →</span>
+          <span class="game-card__cta">開始練習 <b>→</b></span>
         </button>
 
-        <button class="game-card reveal game-card--dark" @click="start('input')">
-          <span class="game-card__kicker">Game B · 遊戲 B</span>
-          <span class="game-card__mark" aria-hidden="true">▮</span>
-          <h2>Terminal Input</h2>
-          <p class="u-serif">手寫題</p>
+        <button class="practice-mode reveal" @click="start('input')">
+          <span class="game-card__kicker">02 · Recall the Command</span>
+          <h2>手寫題</h2>
+          <p class="mode-en">Terminal Input</p>
           <p class="game-card__desc">自己把完整指令打出來。空格、連字號、參數位置都要對——最像真的在敲終端機。</p>
+          <div class="mode-terminal"><span>$</span><code>git ______</code></div>
           <div class="game-card__meta">
-            <span class="badge badge--warn"><span class="dot"></span>Advanced 進階</span>
-            <span class="u-mono">{{ inputCount }} questions</span>
+            <span>進階</span><b>{{ inputCount }} 題</b>
           </div>
-          <span class="game-card__cta">Start · 開始 →</span>
+          <span class="game-card__cta">開始練習 <b>→</b></span>
         </button>
       </div>
 
@@ -162,18 +215,18 @@ const inputCount = poolFor("input").length;
 
     <!-- ===================== QUIZ ===================== -->
     <template v-else-if="phase === 'quiz'">
-      <div class="quiz">
+      <div class="quiz quiz-edition">
         <!-- progress bar -->
         <div class="quiz-top">
           <button class="quiz-quit u-mono" @click="backToSelect">← 離開</button>
           <span class="u-mono quiz-count">
-            {{ game === "choice" ? "選擇題" : "手寫題" }} · 第 {{ index + 1 }} / {{ session.length }} 題
+            {{ game === "mistakes" ? "錯題重練" : currentMode === "choice" ? "選擇題" : "手寫題" }} · 第 {{ index + 1 }} / {{ session.length }} 題
           </span>
           <span class="u-mono quiz-score">SCORE {{ score }}</span>
         </div>
         <div class="progress" style="margin-bottom: 40px"><div class="progress__bar" :style="{ width: progress + '%' }"></div></div>
 
-        <div class="quiz-card" :key="current.id">
+        <article class="quiz-card quiz-sheet" :key="current.id">
           <div class="flex gap3 items-center" style="margin-bottom: 20px">
             <span class="badge badge--solid">{{ current.cmd === "concept" ? "Concept 概念" : current.cmd }}</span>
             <span class="badge" :class="{ 'badge--warn': current.difficulty === 2, 'badge--danger': current.difficulty === 3 }">
@@ -181,8 +234,7 @@ const inputCount = poolFor("input").length;
             </span>
           </div>
 
-          <h2 class="quiz-scenario">{{ current.scenario.en }}</h2>
-          <p class="u-serif quiz-scenario-zh">{{ current.scenario.zh }}</p>
+          <h2 class="quiz-scenario quiz-scenario-zh">{{ current.scenario.zh }}</h2>
 
           <div class="quiz-hint">
             <button
@@ -190,17 +242,19 @@ const inputCount = poolFor("input").length;
               :aria-expanded="showHint"
               @click="showHint = !showHint"
             >
-              {{ showHint ? "收起提示" : "需要提示？" }}
+              {{ showHint ? "收起提示" : "提示" }}
             </button>
             <Transition name="fade">
-              <p v-if="showHint" class="u-serif quiz-hint__text">
+              <div v-if="showHint" class="u-serif quiz-hint__text">
                 <span class="u-mono">提示 ·</span> {{ current.hint.zh }}
-              </p>
+                <button v-if="!showSyntaxHint" type="button" class="quiz-hint__more" @click="showSyntaxHint = true">顯示語法 →</button>
+                <code v-else class="quiz-hint__syntax">{{ current.solution }}</code>
+              </div>
             </Transition>
           </div>
 
           <!-- CHOICE -->
-          <div v-if="game === 'choice'" class="choice" style="margin-top: 28px">
+          <div v-if="currentMode === 'choice'" class="choice" style="margin-top: 28px">
             <button
               v-for="(opt, i) in current._options"
               :key="i"
@@ -245,18 +299,18 @@ const inputCount = poolFor("input").length;
 
           <!-- FEEDBACK -->
           <Transition name="fade">
-            <div v-if="answered" class="feedback" :class="wasCorrect ? 'feedback--ok' : 'feedback--no'">
+            <div v-if="answered" class="feedback editor-feedback" :class="wasCorrect ? 'feedback--ok' : 'feedback--no'">
               <div class="feedback__head">
                 <span class="feedback__badge">{{ wasCorrect ? "✓" : "✕" }}</span>
                 <div>
-                  <b>{{ wasCorrect ? "Mission Complete · 答對了" : "Not quite · 再看一次" }}</b>
+                  <b>{{ wasCorrect ? "答對了" : "再看一次" }}</b>
                   <small v-if="wasCorrect" class="u-serif">Excellent — 做得很好。</small>
                   <small v-else class="u-serif">別擔心，看正解就記住了。</small>
                 </div>
               </div>
               <div v-if="!wasCorrect" class="feedback__answer feedback__answer--given">
                 <span class="u-mono feedback__label">你的答案</span>
-                <code>{{ game === "choice" ? chosen : inputVal }}</code>
+                <code>{{ currentMode === "choice" ? chosen : inputVal }}</code>
               </div>
               <div class="feedback__answer">
                 <span class="u-mono feedback__label">正確答案</span>
@@ -271,14 +325,14 @@ const inputCount = poolFor("input").length;
               </button>
             </div>
           </Transition>
-        </div>
+        </article>
       </div>
     </template>
 
     <!-- ===================== RESULT ===================== -->
     <template v-else>
       <div class="result reveal in">
-        <p class="eyebrow" style="justify-content: center">Round Complete · 一回合結束</p>
+        <p class="eyebrow" style="justify-content: center">Practice Report · 本回合成績</p>
         <div class="result-score">
           <span class="result-num">{{ score }}</span>
           <span class="result-den">/ {{ session.length }}</span>
@@ -287,7 +341,7 @@ const inputCount = poolFor("input").length;
         <p class="u-serif result-grade-zh">{{ grade.zh }}</p>
 
         <div class="result-actions">
-          <button class="btn btn--lg" @click="start(game)">Play Again <span class="zh">再玩一次</span></button>
+          <button class="btn btn--lg" @click="restartRound">{{ game === "mistakes" ? "再練剩餘錯題" : "再玩一次" }}</button>
           <button class="btn btn--ghost btn--lg" @click="backToSelect">Switch Game <span class="zh">換一種</span></button>
         </div>
 
@@ -394,8 +448,65 @@ const inputCount = poolFor("input").length;
 .review-link { font-family: var(--mono); font-size: 12px; color: var(--primary); white-space: nowrap; }
 .review-link:hover { text-decoration: underline; }
 
+/* Git Daily weekend practice edition */
+.practice { --practice-body: 16px; padding-top: 30px; padding-bottom: 72px; }
+.pr-head { text-align: left; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px double var(--ink); }
+.practice-kicker { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; font-family: var(--mono); font-size: 14px; letter-spacing: .14em; text-transform: uppercase; }
+.practice-kicker b { font-family: var(--serif-tc); font-size: 17px; letter-spacing: .04em; }
+.pr-title { margin: 22px 0 0; font-family: Georgia,"Times New Roman",serif; font-size: clamp(42px,5vw,64px); font-weight: 700; line-height: 1; }
+.pr-title-zh { margin: 10px 0 0; font-family: var(--serif-tc); font-size: 25px; color: var(--primary); }
+.pr-sub { max-width: 64ch; margin: 18px 0 0; font-size: var(--practice-body); line-height: 1.8; }
+.practice-modes { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
+.practice-mode { min-width: 0; padding: 30px 34px 26px; border: 0; border-right: 1px solid var(--border); background: transparent; color: var(--ink); text-align: left; cursor: pointer; transition: background .18s; }
+.practice-mode:last-child { border-right: 0; }
+.practice-mode:hover { background: var(--secondary-2); }
+.practice-mode:focus-visible { outline-offset: -4px; }
+.practice-mode .game-card__kicker { display: block; font-family: var(--mono); font-size: 14px; letter-spacing: .12em; color: var(--primary); text-transform: uppercase; }
+.practice-mode h2 { margin: 24px 0 0; font-family: var(--display); font-size: 38px; }
+.mode-en { margin: 4px 0 0; font-family: var(--mono); font-size: 16px; color: var(--ink-faint); }
+.practice-mode .game-card__desc { max-width: 45ch; margin: 22px 0; font-family: var(--serif-tc); font-size: var(--practice-body); line-height: 1.75; color: var(--ink-soft); }
+.mode-terminal { display: flex; gap: 12px; margin: 2px 0 20px; padding: 13px 16px; background: var(--terminal-bg); color: var(--success); font-family: var(--mono); font-size: var(--practice-body); }
+.mode-terminal code { color: var(--code-fg); }
+.practice-mode .game-card__meta { margin: 0; padding: 14px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-family: var(--serif-tc); font-size: var(--practice-body); }
+.practice-mode .game-card__meta b { font-family: var(--mono); color: var(--primary); }
+.practice-mode .game-card__cta { display: inline-flex; gap: 12px; align-items: center; margin-top: 22px; font-family: var(--serif-tc); font-size: 18px; color: var(--primary); }
+.practice-mode .game-card__cta b { font-family: var(--mono); }
+.pr-tip { margin-top: 28px; padding: 16px 0; border-bottom: 3px double var(--ink); font-size: var(--practice-body); text-align: left; }
+.pr-tip code { border-radius: 0; }
+
+.quiz { max-width: 900px; }
+.quiz-top { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--ink); font-size: 14px; }
+.quiz-quit,.quiz-count,.quiz-score { font-size: 14px; }
+.quiz-sheet { padding: 32px 38px 36px; border: 1px solid var(--border); border-top: 4px double var(--ink); border-radius: 0; background: var(--paper-2); }
+.quiz-scenario { max-width: 28ch; font-family: Georgia,"Times New Roman",serif; font-size: clamp(27px,3vw,38px); line-height: 1.25; }
+.quiz-scenario-zh { max-width: 34ch; margin-top: 0; font-family: var(--serif-tc); font-size: clamp(24px,2.8vw,34px); line-height: 1.5; color: var(--ink); }
+.quiz-hint__toggle { padding: 10px 16px; border-radius: 0; font-size: 14px; }
+.quiz-hint__text { padding: 14px 18px; background: transparent; font-size: var(--practice-body); }
+.quiz-hint__text .u-mono { font-size: 14px; }
+.quiz-hint__more { display: block; margin-top: 12px; padding: 7px 0; border: 0; border-bottom: 1px solid var(--primary); background: transparent; font-family: var(--serif-tc); font-size: 14px; color: var(--primary); cursor: pointer; }
+.quiz-hint__syntax { display: block; width: fit-content; margin-top: 12px; padding: 9px 13px; border: 1px solid var(--border); background: var(--paper); font-family: var(--mono); font-size: var(--practice-body); color: var(--primary); }
+.quiz-sheet .choice { border-top: 1px solid var(--border); }
+.quiz-sheet .choice button { border: 0; border-bottom: 1px solid var(--border); border-radius: 0; background: transparent; font-size: var(--practice-body); }
+.quiz-sheet .choice button:hover:not(:disabled) { background: var(--secondary-2); }
+.quiz-sheet .choice .key { border-radius: 0; }
+.quiz-terminal .terminal { border-radius: 0; }
+
+.editor-feedback { padding: 22px 0 0; border: 0; border-top: 3px double var(--ink); border-radius: 0; background: transparent; }
+.feedback__head b { font-family: var(--display); font-size: 22px; }
+.feedback__head small,.feedback__label,.feedback__note p { font-size: 14px; }
+.feedback__answer code { border-radius: 0; font-size: var(--practice-body); }
+.feedback__note p { font-size: var(--practice-body); }
+
+.result { max-width: 760px; }
+.result .eyebrow { padding-bottom: 14px; border-bottom: 3px double var(--ink); font-size: 14px; }
+.result-grade-zh,.result-perfect,.review-q { font-size: var(--practice-body); }
+.review { padding-top: 24px; }
+.review-answers,.review-link { font-size: 14px; }
+
 @media (max-width: 720px) {
-  .game-cards { grid-template-columns: 1fr; }
+  .game-cards,.practice-modes { grid-template-columns: 1fr; }
+  .practice-mode { border-right: 0; border-bottom: 1px solid var(--border); }
+  .practice-mode:last-child { border-bottom: 0; }
   .quiz-card { padding: 28px 22px; }
   .review-row { flex-direction: column; gap: 10px; }
 }

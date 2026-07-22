@@ -1,5 +1,6 @@
 import { reactive, watch } from "vue";
 import { DEFAULT_PROGRESS, migrateChallengeProgress } from "./progressRules.js";
+import { upsertMistake, removeMistake } from "./mistakeRecords.js";
 
 // -------- Persistent global store (theme, XP, progress, favorites) --------
 const load = (k, fallback) => {
@@ -14,6 +15,7 @@ export const store = reactive({
   favorites: load("gd-favs", [...DEFAULT_PROGRESS.favorites]),
   recent: load("gd-recent", [...DEFAULT_PROGRESS.recent]),
   unlockedAchievements: load("gd-achievements", [...DEFAULT_PROGRESS.unlockedAchievements]),
+  mistakes: load("gd-mistakes", []),
 });
 
 // -------- Persistence --------
@@ -26,6 +28,7 @@ watch(() => store.completedMissions, (v) => localStorage.setItem("gd-missions", 
 watch(() => store.favorites, (v) => localStorage.setItem("gd-favs", JSON.stringify(v)), { deep: true });
 watch(() => store.recent, (v) => localStorage.setItem("gd-recent", JSON.stringify(v)), { deep: true });
 watch(() => store.unlockedAchievements, (v) => localStorage.setItem("gd-achievements", JSON.stringify(v)), { deep: true });
+watch(() => store.mistakes, (v) => localStorage.setItem("gd-mistakes", JSON.stringify(v)), { deep: true });
 
 // -------- Actions --------
 export function toggleTheme() {
@@ -51,6 +54,15 @@ export function pushRecent(slug) {
   if (i > -1) store.recent.splice(i, 1);
   store.recent.unshift(slug);
   store.recent = store.recent.slice(0, 6);
+}
+export function recordMistake(attempt) {
+  store.mistakes = upsertMistake(store.mistakes, attempt);
+}
+export function resolveMistake(id) {
+  store.mistakes = removeMistake(store.mistakes, id);
+}
+export function clearMistakes() {
+  store.mistakes = [];
 }
 
 // -------- Toast (lightweight event bus) --------

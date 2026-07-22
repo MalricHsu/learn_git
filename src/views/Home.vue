@@ -2,281 +2,497 @@
 import { computed } from "vue";
 import { RouterLink } from "vue-router";
 import { store } from "../composables/useStore.js";
-import { commands, bySlug } from "../data/commands.js";
-import { challenges, totalXp } from "../data/challenges.js";
+import { bySlug } from "../data/commands.js";
+import { challenges, chapters } from "../data/challenges.js";
 
 const today = new Date().toLocaleDateString("en-US", {
-  weekday: "long", year: "numeric", month: "long", day: "numeric",
+  weekday: "long",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
 });
-
-const done = computed(() => store.completedMissions.length);
-const challengePct = computed(() => Math.round((done.value / challenges.length) * 100));
-const xpPct = computed(() => Math.min(100, Math.round((store.xp / totalXp) * 100)));
-
-const feature = bySlug("git-init");
-const editorsPick = bySlug("git-commit");
-const cotd = bySlug("git-branch");
-
-const nextChallenge = computed(
-  () => challenges.find((item) => !store.completedMissions.includes(item.id)) || challenges[0]
+const completed = computed(() => store.completedMissions.length);
+const progress = computed(() =>
+  Math.round((completed.value / challenges.length) * 100),
 );
-const recentCmds = computed(() => store.recent.map(bySlug).filter(Boolean));
-
-const headlines = [
-  { slug: "git-merge", kicker: "分支管理", en: "When Two Timelines Meet", zh: "當兩條時間線相遇" },
-  { slug: "git-stash", kicker: "進階操作", en: "Shelving Work Without Regret", zh: "毫無後顧地收起工作" },
-  { slug: "git-pull", kicker: "遠端儲存庫", en: "Catching Up With the Team", zh: "跟上團隊的腳步" },
-];
-
-const didYouKnow = {
-  en: "The name “Git” was chosen by Linus Torvalds in 2005. He jokingly called it “the stupid content tracker.”",
-  zh: "「Git」這個名字由 Linus Torvalds 在 2005 年命名。他打趣地稱它為「笨蛋內容追蹤器」。",
-};
+const nextChallenge = computed(
+  () =>
+    challenges.find((item) => !store.completedMissions.includes(item.id)) ||
+    challenges[0],
+);
+const feature = bySlug("git-init");
 </script>
 
 <template>
   <div class="home">
-  <!-- ======================= MASTHEAD ======================= -->
-  <header class="masthead">
-    <div class="wrap">
-      <div class="masthead__meta">
-        <span>Issue No.001 · 創刊號</span>
-        <span data-dateline>{{ today }}</span>
-        <span>The Morning Paper Edition</span>
-      </div>
-      <div class="masthead__title">
-        <h1>Git Daily</h1>
-        <div class="zh">像閱讀每日報紙一樣學習 GIT</div>
-      </div>
-    </div>
-  </header>
-
-  <div class="wrap">
-    <!-- ======================= HERO ======================= -->
-    <section class="hero reveal">
-      <div class="hero__lead">
-        <p class="eyebrow">今日頭版</p>
-        <h2 class="hero__headline">
-          Learn Git like<br />reading the<br /><em>morning paper.</em>
-        </h2>
-        <p class="hero__deck">
-          先閱讀，再理解，立即練習，最後真正記住 Git。
-          一份為初學者印製的互動報紙——不是速查表，而是一本可以玩的教科書。
-        </p>
-        <div class="flex gap4 wrap-flex" style="margin-top: 28px">
-          <RouterLink to="/game" class="btn btn--lg">開始學習</RouterLink>
-          <RouterLink to="/reference" class="btn btn--ghost btn--lg">翻閱手冊</RouterLink>
+    <header class="masthead">
+      <div class="wrap">
+        <div class="masthead__meta">
+          <span>Issue No.001 · 創刊號</span><span>{{ today }}</span
+          ><span>Interactive Morning Edition</span>
+        </div>
+        <div class="masthead__title">
+          <h1>Git Daily</h1>
+          <p>像閱讀每日報紙一樣學習 Git</p>
         </div>
       </div>
+    </header>
 
-      <!-- Continue learning + progress -->
-      <aside class="hero__aside">
-        <div class="card">
-          <div class="card__kicker"><span>繼續學習</span></div>
-          <div class="flex gap5 items-center">
-            <div class="xp-ring" :style="{ '--v': xpPct }" role="img" :aria-label="`XP ${xpPct}%`">
-              <div class="xp-ring__inner">
-                <b>{{ store.xp }}</b>
-                <small>XP</small>
-              </div>
-            </div>
-            <div style="flex: 1">
-              <div class="flex between" style="font-size: 12px; margin-bottom: 6px">
-                <span class="u-mono">闖關進度</span>
-                <span class="u-mono">{{ done }}/{{ challenges.length }}</span>
-              </div>
-              <div class="progress"><div class="progress__bar" :style="{ width: challengePct + '%' }"></div></div>
-              <p class="u-serif" style="font-size: 13px; color: var(--ink-soft); margin: 12px 0 0">
-                下一關：<strong>{{ nextChallenge.title.zh }}</strong>
-              </p>
-            </div>
+    <main class="wrap front-page">
+      <section class="front-page__lead">
+        <article class="lead-story reveal">
+          <p class="section-label"><span>Front Page</span><b>今日頭版</b></p>
+          <h2>Learn Git by watching ideas become history.</h2>
+          <p class="lead-story__zh">
+            看著檔案移動、版本誕生、分支交會，真正理解 Git。
+          </p>
+          <p class="lead-story__deck">
+            Git Daily 是一本可以玩的 Git
+            教科書。每次輸入指令，工作流程、提交歷史與分支圖都會立即回應，讓你從變化中理解，而不是死背語法。
+          </p>
+          <div class="lead-story__actions">
+            <RouterLink to="/game" class="btn btn--lg">{{
+              completed ? "繼續闖關" : "開始第一關"
+            }}</RouterLink>
           </div>
-          <RouterLink to="/game" class="btn" style="width: 100%; margin-top: 20px">繼續闖關</RouterLink>
-        </div>
-      </aside>
-    </section>
-
-    <hr class="rule" />
-
-    <!-- ======================= TODAY'S FEATURE ======================= -->
-    <section class="feature-grid">
-      <article class="feature reveal">
-        <p class="eyebrow">今日焦點</p>
-        <RouterLink :to="`/reference/${feature.slug}`" class="feature__link">
-          <h3 class="feature__title">{{ feature.name }}</h3>
-          <p class="feature__zh">{{ feature.tagline.zh }} — 建立你的第一個儲存庫</p>
-        </RouterLink>
-        <p class="feature__body">{{ feature.what.zh }}</p>
-        <div class="codeblock" style="margin-top: 20px">
-          <div class="codeblock__bar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="label">Terminal</span></div>
-          <pre><span class="tok-cmd">git</span> init
-<span class="tok-comment"># Initialized empty Git repository in /project/.git/</span></pre>
-        </div>
-        <RouterLink :to="`/reference/${feature.slug}`" class="read-more">
-          閱讀完整文章 →
-        </RouterLink>
-      </article>
-
-      <div class="feature-side">
-        <!-- Editor's Pick -->
-        <article class="card card--hover reveal">
-          <div class="card__kicker"><span>編輯精選</span></div>
-          <RouterLink :to="`/reference/${editorsPick.slug}`">
-            <h4 class="side-title">{{ editorsPick.name }}</h4>
-            <p class="side-zh">{{ editorsPick.tagline.zh }}</p>
-            <p class="side-body">{{ editorsPick.why.zh }}</p>
-          </RouterLink>
         </article>
 
-        <!-- Command of the Day -->
-        <article class="card reveal" style="background: var(--primary); color: var(--paper-2); border-color: var(--primary)">
-          <div class="card__kicker" style="color: var(--secondary)"><span>今日指令</span></div>
-          <h4 class="side-title" style="color: var(--paper-2)">{{ cotd.name }}</h4>
-          <p style="font-family: var(--serif-tc); font-size: 13px; opacity: .85; margin: 4px 0 14px">{{ cotd.tagline.zh }}</p>
-          <RouterLink :to="`/reference/${cotd.slug}`" class="btn btn--ghost" style="--fg: var(--paper-2); border-color: rgba(255,255,255,.35); width: 100%">
-            學習這個指令
-          </RouterLink>
+        <aside class="continue-panel reveal">
+          <header><span>Continue Reading</span><b>繼續學習</b></header>
+          <p class="continue-panel__number">
+            {{ String(nextChallenge.no).padStart(2, "0") }}
+          </p>
+          <small>Next Challenge · 下一關</small>
+          <h3>{{ nextChallenge.title.en }}</h3>
+          <p>{{ nextChallenge.title.zh }}</p>
+          <blockquote>{{ nextChallenge.summary.zh }}</blockquote>
+          <div class="continue-panel__progress">
+            <span>{{ completed }} / {{ challenges.length }} completed</span
+            ><span>{{ progress }}%</span>
+          </div>
+          <div class="progress">
+            <div class="progress__bar" :style="{ width: progress + '%' }"></div>
+          </div>
+          <RouterLink to="/game" class="continue-panel__link"
+            >繼續闖關 <span>→</span></RouterLink
+          >
+        </aside>
+      </section>
+
+      <section class="today-lesson reveal">
+        <header class="edition-heading">
+          <div><span>Today's Lesson</span><b>今日一課</b></div>
+          <small>01 · Git Foundations</small>
+        </header>
+        <article class="lesson-layout">
+          <div class="lesson-copy">
+            <p class="eyebrow">Start Here · 從這裡開始</p>
+            <RouterLink :to="`/reference/${feature.slug}`"
+              ><h3>{{ feature.name }}</h3></RouterLink
+            >
+            <p class="lesson-copy__zh">{{ feature.tagline.zh }}</p>
+            <p>{{ feature.what.zh }}</p>
+            <RouterLink
+              :to="`/reference/${feature.slug}`"
+              class="btn btn--ghost"
+              >閱讀完整教學</RouterLink
+            >
+          </div>
+          <div class="lesson-terminal">
+            <div class="lesson-terminal__bar">
+              <i></i><i></i><i></i><span>gitdaily — zsh</span>
+            </div>
+            <pre><code><b>$</b> <span>git</span> init<br><em>Initialized empty Git repository in /project/.git/</em></code></pre>
+          </div>
         </article>
-      </div>
-    </section>
+      </section>
 
-    <hr class="rule-thin u-mt7" />
-
-    <!-- ======================= HEADLINES ======================= -->
-    <section class="u-mt7">
-      <div class="flex between items-center" style="margin-bottom: 28px">
-        <div class="bi"><span class="en" style="font-size: 26px; font-weight: 800">Today's Headlines</span></div>
-        <RouterLink to="/reference" class="read-more">全部指令 →</RouterLink>
-      </div>
-      <div class="headlines">
-        <RouterLink v-for="(h, i) in headlines" :key="h.slug" :to="`/reference/${h.slug}`" class="headline reveal">
-          <span class="headline__no">{{ String(i + 1).padStart(2, "0") }}</span>
-          <div>
-            <span class="badge" style="margin-bottom: 12px">{{ h.kicker }}</span>
-            <h4>{{ h.en }}</h4>
-            <p class="u-serif">{{ h.zh }}</p>
-            <code class="headline__cmd">{{ bySlug(h.slug).name }}</code>
-          </div>
-        </RouterLink>
-      </div>
-    </section>
-
-    <hr class="rule-thin u-mt7" />
-
-    <!-- ======================= LOWER GRID ======================= -->
-    <section class="lower-grid u-mt7">
-      <!-- Today's Challenge -->
-      <article class="card reveal" style="border-color: var(--secondary)">
-        <div class="card__kicker"><span>今日闖關</span></div>
-        <div class="mission-hd">
-          <div>
-            <h3 style="font-family: var(--display); font-size: 24px; margin: 0 0 4px">{{ nextChallenge.title.en }}</h3>
-            <p class="u-serif" style="color: var(--ink-soft); margin: 0">{{ nextChallenge.title.zh }}</p>
-          </div>
-          <span class="badge badge--warn"><span class="dot"></span>{{ nextChallenge.difficulty }}</span>
+      <section class="chapter-editions reveal">
+        <header class="edition-heading">
+          <div><span>Chapter Editions</span><b>學習章節</b></div>
+          <p>從第一個版本，到安全整理歷史。</p>
+        </header>
+        <div class="chapter-editions__grid">
+          <RouterLink
+            v-for="chapter in chapters"
+            :key="chapter.id"
+            to="/game"
+            class="chapter-edition"
+            ><span>CHAPTER {{ String(chapter.number).padStart(2, "0") }}</span>
+            <h3>{{ chapter.title.en }}</h3>
+            <p>{{ chapter.title.zh }}</p>
+            <small
+              >{{
+                challenges.filter((item) => item.chapter === chapter.id).length
+              }}
+              Challenges</small
+            ></RouterLink
+          >
         </div>
-        <p style="color: var(--ink-soft); margin: 16px 0 20px">{{ nextChallenge.summary.zh }}</p>
-        <RouterLink to="/game" class="btn">開始闖關</RouterLink>
-        <span class="u-mono" style="margin-left: 14px; font-size: 12px; color: var(--warning)">+{{ nextChallenge.xp }} XP</span>
-      </article>
+      </section>
 
-      <!-- Recent Commands -->
-      <article class="reveal">
-        <div class="card__kicker" style="margin-bottom: 18px"><span>最近學習</span></div>
-        <div class="recent-list">
-          <RouterLink v-for="c in recentCmds" :key="c.slug" :to="`/reference/${c.slug}`" class="recent-item">
-            <code>{{ c.name }}</code>
-            <span class="u-serif">{{ c.tagline.zh }}</span>
-            <span class="recent-arrow">→</span>
-          </RouterLink>
+      <section class="reference-invitation reveal">
+        <div>
+          <span>Git Reference</span>
+          <h2>需要查指令時，再翻開手冊。</h2>
         </div>
-
-        <!-- Did you know -->
-        <div class="card u-mt5" style="background: var(--secondary-2); border: none">
-          <div class="card__kicker"><span>Git 小知識</span></div>
-          <p class="u-serif" style="font-size: 15px; line-height: 1.8; margin: 0; color: var(--ink)">{{ didYouKnow.zh }}</p>
-        </div>
-      </article>
-    </section>
-
-    <hr class="rule u-mt7" />
-
-    <!-- ======================= ROADMAP ======================= -->
-    <section class="u-mt7">
-      <div class="u-center" style="margin-bottom: 40px">
-        <p class="eyebrow" style="justify-content: center">學習路線圖</p>
-        <h2 style="font-family: var(--display); font-size: clamp(28px, 4vw, 44px); margin: 12px 0 0">
-          From first commit to shipping code.
-        </h2>
-        <p class="u-serif" style="color: var(--ink-soft)">從第一次提交，到把程式碼交付上線。</p>
-      </div>
-      <div class="roadmap">
-        <div v-for="challenge in challenges" :key="challenge.id" class="roadmap__stop reveal" :class="{ done: store.completedMissions.includes(challenge.id) }">
-          <div class="roadmap__dot">{{ store.completedMissions.includes(challenge.id) ? "✓" : challenge.no }}</div>
-          <h5>{{ challenge.title.zh }}</h5>
-          <span class="badge" style="margin-top: 8px">{{ challenge.difficulty }}</span>
-        </div>
-      </div>
-    </section>
-  </div>
+        <RouterLink to="/reference" class="btn btn--ghost btn--lg"
+          >瀏覽完整手冊</RouterLink
+        >
+      </section>
+    </main>
   </div>
 </template>
 
 <style scoped>
-/* Hero */
-.hero { display: grid; grid-template-columns: 1.5fr 1fr; gap: 56px; padding: 56px 0; align-items: center; }
-.hero__headline { font-family: var(--display); font-weight: 900; font-size: clamp(40px, 6vw, 76px); line-height: .98; letter-spacing: -.02em; margin: 20px 0 0; }
-.hero__headline em { font-style: italic; color: var(--primary); }
-.hero__deck { font-family: var(--serif-tc); font-size: 17px; line-height: 1.9; color: var(--ink-soft); max-width: 46ch; margin-top: 24px; }
-
-/* Feature grid */
-.feature-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 48px; padding: 48px 0; }
-.feature__link { display: block; }
-.feature__title { font-family: var(--mono); font-size: clamp(28px, 4vw, 40px); font-weight: 700; margin: 16px 0 4px; color: var(--primary); }
-.feature__zh { font-family: var(--serif-tc); font-size: 18px; color: var(--ink); margin: 0 0 20px; }
-.feature__body { font-size: 17px; line-height: 1.85; color: var(--ink-soft); max-width: 54ch; }
-.read-more { display: inline-block; margin-top: 24px; font-family: var(--mono); font-size: 13px; letter-spacing: .05em; color: var(--primary); border-bottom: 1px solid var(--secondary); padding-bottom: 2px; }
-.feature-side { display: flex; flex-direction: column; gap: 24px; }
-.side-title { font-family: var(--display); font-size: 24px; margin: 0; }
-.side-zh { font-family: var(--serif-tc); color: var(--ink-soft); font-size: 13px; margin: 4px 0 12px; }
-.side-body { font-size: 14px; line-height: 1.7; color: var(--ink-soft); margin: 0; }
-
-/* Headlines */
-.headlines { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; }
-.headline { display: flex; gap: 20px; padding-top: 20px; border-top: 2px solid var(--ink); transition: transform .25s var(--ease); }
-.headline:hover { transform: translateY(-3px); }
-.headline:hover h4 { color: var(--primary); }
-.headline__no { font-family: var(--display); font-size: 44px; font-weight: 900; color: var(--secondary); line-height: 1; }
-.headline h4 { font-family: var(--display); font-size: 22px; margin: 0 0 6px; transition: color .2s; }
-.headline p { color: var(--ink-soft); font-size: 14px; margin: 0 0 12px; }
-.headline__cmd { font-size: 12px; color: var(--primary); background: var(--secondary-2); padding: 3px 8px; border-radius: 4px; }
-
-/* Lower grid */
-.lower-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 48px; }
-.recent-list { display: flex; flex-direction: column; }
-.recent-item { display: flex; align-items: center; gap: 16px; padding: 14px 4px; border-bottom: 1px solid var(--border); transition: padding .2s; }
-.recent-item:hover { padding-left: 12px; }
-.recent-item:hover .recent-arrow { opacity: 1; transform: translateX(0); }
-.recent-item code { font-size: 14px; color: var(--primary); min-width: 130px; }
-.recent-item .u-serif { flex: 1; color: var(--ink-soft); font-size: 14px; }
-.recent-arrow { color: var(--primary); opacity: 0; transform: translateX(-6px); transition: all .2s; }
-
-/* Roadmap */
-.roadmap { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; }
-.roadmap__stop { text-align: center; padding: 24px 12px; border: 1px solid var(--border); border-radius: 12px; background: var(--paper-2); }
-.roadmap__stop.done { border-color: color-mix(in srgb, var(--success) 40%, transparent); }
-.roadmap__dot { width: 44px; height: 44px; border-radius: 50%; border: 1.5px solid var(--border); display: grid; place-items: center; margin: 0 auto 16px; font-family: var(--display); font-weight: 700; }
-.roadmap__stop.done .roadmap__dot { background: var(--success); color: var(--paper-2); border-color: var(--success); }
-.roadmap__stop h5 { font-family: var(--serif-tc); font-weight: 600; font-size: 14px; margin: 0 0 4px; }
-.roadmap__stop p { font-size: 12px; color: var(--ink-faint); margin: 0; }
-
-/* Responsive */
-@media (max-width: 900px) {
-  .hero, .feature-grid, .lower-grid { grid-template-columns: 1fr; gap: 40px; }
-  .headlines { grid-template-columns: 1fr; gap: 28px; }
-  .roadmap { grid-template-columns: repeat(2, 1fr); }
+.masthead__title p {
+  margin: 0 0 6px;
+  font-family: var(--serif-tc);
+  font-size: 18px;
+  color: var(--ink-soft);
 }
-@media (max-width: 560px) {
-  .roadmap { grid-template-columns: 1fr; }
+.masthead__meta {
+  font-size: 14px;
+}
+.front-page .btn {
+  font-size: 16px;
+}
+.front-page {
+  padding-top: 34px;
+  padding-bottom: 80px;
+}
+.front-page__lead {
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.75fr);
+  gap: 54px;
+  padding-bottom: 42px;
+  border-bottom: 3px double var(--ink);
+}
+.section-label,
+.edition-heading > div {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.section-label b,
+.edition-heading b {
+  font-family: var(--serif-tc);
+  font-size: 16px;
+  letter-spacing: 0.04em;
+}
+.lead-story h2 {
+  max-width: 760px;
+  margin: 20px 0 10px;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(40px, 4.2vw, 56px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+}
+.lead-story__zh {
+  margin: 20px 0 0;
+  font-family: var(--serif-tc);
+  font-size: clamp(20px, 2vw, 28px);
+  color: var(--primary);
+  font-weight: 700;
+}
+.lead-story__deck {
+  max-width: 54ch;
+  margin: 22px 0 0;
+  font-family: var(--serif-tc);
+  font-size: 18px;
+  line-height: 1.9;
+  color: var(--ink-soft);
+  font-weight: 700;
+}
+.lead-story__actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 28px;
+}
+.text-link {
+  font-family: var(--mono);
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  color: var(--primary);
+  border-bottom: 1px solid var(--secondary);
+  padding-bottom: 3px;
+}
+.continue-panel {
+  align-self: end;
+  padding: 20px 22px 16px;
+  border: 1px solid var(--border);
+  border-top: 4px double var(--ink);
+  background: var(--paper-2);
+  box-shadow: 0 16px 38px -28px rgba(35, 66, 51, 0.45);
+}
+.continue-panel header {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.continue-panel header b {
+  font-family: var(--serif-tc);
+  font-weight: 400;
+}
+.continue-panel__number {
+  float: right;
+  margin: 14px 0 0 16px;
+  font-family: var(--display);
+  font-size: 58px;
+  line-height: 0.8;
+  color: var(--secondary);
+}
+.continue-panel > small {
+  display: block;
+  margin-top: 18px;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+}
+.continue-panel h3 {
+  margin: 6px 0 2px;
+  font-family: var(--display);
+  font-size: 28px;
+}
+.continue-panel > p:not(.continue-panel__number) {
+  margin: 0;
+  font-family: var(--serif-tc);
+  font-size: 18px;
+  color: var(--primary);
+}
+.continue-panel blockquote {
+  clear: both;
+  margin: 18px 0 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  font-family: var(--serif-tc);
+  font-size: 17px;
+  line-height: 1.7;
+  color: var(--ink-soft);
+}
+.continue-panel__progress {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--ink-faint);
+}
+.continue-panel__link {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+  margin-top: 14px;
+  padding: 12px 0 2px;
+  border-top: 3px double var(--ink);
+  font-family: var(--serif-tc);
+  font-size: 18px;
+  color: var(--primary);
+  font-weight: 700;
+}
+.today-lesson,
+.chapter-editions {
+  padding: 42px 0;
+  border-bottom: 1px solid var(--ink);
+}
+.edition-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 13px;
+  border-bottom: 2px solid var(--ink);
+}
+.edition-heading > p,
+.edition-heading > small {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 14px;
+  color: var(--ink-faint);
+}
+.lesson-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
+  gap: 48px;
+  align-items: center;
+  padding: 34px 0 4px;
+}
+.lesson-copy h3 {
+  margin: 12px 0 3px;
+  font-family: var(--mono);
+  font-size: 36px;
+  color: var(--primary);
+}
+.lesson-copy__zh {
+  font-family: var(--serif-tc);
+  font-size: 20px;
+  color: var(--ink);
+}
+.lesson-copy > p:last-of-type {
+  max-width: 48ch;
+  margin-bottom: 24px;
+  font-size: 18px;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+.lesson-terminal {
+  overflow: hidden;
+  border: 1px solid var(--code-line);
+  border-radius: 8px;
+  background: var(--terminal-bg);
+  box-shadow: var(--shadow);
+}
+.lesson-terminal__bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--code-line);
+}
+.lesson-terminal__bar i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--danger);
+}
+.lesson-terminal__bar i:nth-child(2) {
+  background: var(--warning);
+}
+.lesson-terminal__bar i:nth-child(3) {
+  background: var(--success);
+}
+.lesson-terminal__bar span {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+}
+.lesson-terminal pre {
+  margin: 0;
+  min-height: 145px;
+  padding: 32px;
+  background: var(--terminal-bg);
+  color: var(--code-fg);
+  font-family: var(--mono);
+  font-size: 16px;
+  line-height: 2;
+}
+.lesson-terminal pre b {
+  color: var(--success);
+}
+.lesson-terminal pre span {
+  color: var(--warning);
+}
+.lesson-terminal pre em {
+  color: var(--ink-faint);
+  font-style: normal;
+}
+.chapter-editions__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-left: 1px solid var(--border);
+}
+.chapter-edition {
+  min-height: 160px;
+  padding: 24px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.2s;
+}
+.chapter-edition:hover {
+  background: var(--secondary-2);
+}
+.chapter-edition > span,
+.chapter-edition small {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  color: var(--ink-faint);
+}
+.chapter-edition h3 {
+  margin: 18px 0 3px;
+  font-family: var(--display);
+  font-size: 26px;
+}
+.chapter-edition p {
+  margin: 0 0 18px;
+  font-family: var(--serif-tc);
+  font-size: 17px;
+  color: var(--primary);
+}
+.reference-invitation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 42px 0;
+  border-bottom: 3px double var(--ink);
+}
+.reference-invitation span {
+  font-family: var(--mono);
+  font-size: 14px;
+  letter-spacing: 0.12em;
+  color: var(--primary);
+}
+.reference-invitation h2 {
+  margin: 7px 0 0;
+  font-family: var(--serif-tc);
+  font-size: 28px;
+  font-weight: 600;
+}
+@media (max-width: 900px) {
+  .front-page__lead,
+  .lesson-layout {
+    grid-template-columns: 1fr;
+  }
+  .front-page__lead {
+    gap: 38px;
+  }
+  .continue-panel {
+    width: 100%;
+  }
+  .chapter-editions__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 600px) {
+  .front-page {
+    padding-top: 24px;
+  }
+  .lead-story h2 {
+    font-size: 40px;
+  }
+  .lead-story__actions,
+  .edition-heading,
+  .reference-invitation {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .chapter-editions__grid {
+    grid-template-columns: 1fr;
+  }
+  .chapter-edition {
+    min-height: 130px;
+  }
+  .lesson-terminal pre {
+    min-height: 120px;
+    padding: 22px;
+    font-size: 16px;
+  }
 }
 </style>

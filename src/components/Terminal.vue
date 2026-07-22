@@ -27,7 +27,7 @@ function scroll() {
   nextTick(() => { if (bodyEl.value) bodyEl.value.scrollTop = bodyEl.value.scrollHeight; });
 }
 watch(() => props.engine.state.lines.length, scroll);
-function focus() { inputEl.value?.focus(); }
+function focus() { inputEl.value?.focus({ preventScroll: true }); }
 defineExpose({ focus });
 </script>
 

@@ -4,19 +4,40 @@ import { readFile } from "node:fs/promises";
 
 const read = (name) => readFile(new URL(`../src/components/challenge/${name}`, import.meta.url), "utf8");
 
-test("roadmap and brief expose challenge states and three hint levels", async () => {
+test("roadmap and brief expose Chinese challenge metadata and three hint levels", async () => {
   const [roadmap, brief] = await Promise.all([read("ChallengeRoadmap.vue"), read("ChallengeBrief.vue")]);
   for (const state of ["done", "current", "locked"]) assert.ok(roadmap.includes(state));
-  for (const label of ["Challenge Roadmap", "闖關地圖", "Difficulty", "Reward", "Learning Goal"]) {
+  for (const label of ["Challenge Roadmap", "闖關地圖", "難度", "獎勵", "學習目標"]) {
     assert.ok((roadmap + brief).includes(label), label);
   }
   assert.ok(brief.includes("challenge.hints"));
+  assert.equal(roadmap.includes("challenge.summary.zh"), false);
+  assert.ok(roadmap.includes("visibleChallenges"));
+  assert.ok(roadmap.includes("cardCode"));
+  assert.ok(roadmap.includes("roadmap__track"));
+  assert.ok(roadmap.includes("scrollBy"));
+  assert.match(roadmap, /overflow-x:\s*auto/);
+  assert.ok(brief.includes("challenge.learningConcept.zh"));
+  assert.equal(brief.includes("challenge.learningConcept.en"), false);
+  assert.equal(brief.includes("challenge.learningGoal"), false);
+  assert.ok(brief.includes("brief__headline"));
+  assert.ok(brief.includes("brief__stats"));
+  assert.equal(brief.includes('class="brief card"'), false);
 });
 
-test("visualization contains workflow, graph, timeline, and editor desk only", async () => {
-  const [container, workflow] = await Promise.all([read("GitVisualization.vue"), read("GitWorkflow.vue")]);
-  for (const component of ["GitWorkflow", "GitGraph", "CommitTimeline", "EditorsDesk"]) assert.ok(container.includes(component));
+test("visualization uses tabs while the game renders dynamic teaching feedback", async () => {
+  const [container, tabs, workflow, game] = await Promise.all([
+    read("GitVisualization.vue"),
+    read("VisualizationTabs.vue"),
+    read("GitWorkflow.vue"),
+    readFile(new URL("../src/views/Game.vue", import.meta.url), "utf8"),
+  ]);
+  assert.ok(container.includes("VisualizationTabs"));
+  assert.ok(game.includes("resolveEditorsDesk"));
+  assert.ok(game.includes("challenge-complete__desk"));
+  for (const component of ["GitWorkflow", "GitGraph", "CommitTimeline"]) assert.ok(tabs.includes(component));
   for (const field of ["workingDirectory", "stagingArea", "repository"]) assert.ok(workflow.includes(field));
-  assert.equal(workflow.includes(".length"), false);
+  assert.equal(workflow.includes("{{ state[zone.key].length }}"), false);
   assert.equal(container.includes("Repository Status"), false);
+  assert.match(tabs, /border-radius:\s*0/);
 });

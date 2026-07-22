@@ -8,7 +8,7 @@ const labelAt = (hash) => graph.value.labels.filter((label) => label.hash === ha
 </script>
 <template>
   <section class="viz-section graph">
-    <header><span>Git Graph</span><b>Git 分支圖</b></header>
+    <header><b>Git 分支圖</b></header>
     <p v-if="!commits[0]" class="empty">建立第一個 Commit 後，分支圖會從這裡開始。</p>
     <svg v-else viewBox="0 0 300 400" :style="{ height: height + 'px' }" aria-label="Git branch graph">
       <path v-for="(edge, index) in graph.edges" :key="index" :d="`M ${edge.from.x} ${edge.from.y} C ${edge.from.x} ${edge.to.y}, ${edge.to.x} ${edge.from.y}, ${edge.to.x} ${edge.to.y}`" />
@@ -21,5 +21,5 @@ const labelAt = (hash) => graph.value.labels.filter((label) => label.hash === ha
   </section>
 </template>
 <style scoped>
-.viz-section { padding: 22px; border: 1px solid var(--border); border-radius: 12px; background: var(--paper-2); } header { display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase } header b{font-family:var(--serif-tc);font-weight:400}.empty{font-family:var(--serif-tc);color:var(--ink-faint);font-size:11px;line-height:1.7;margin:18px 0 0}svg{width:100%;margin-top:15px;overflow:visible}path{fill:none;stroke:var(--secondary);stroke-width:1.5}.graph__node{transition:transform 280ms ease}.graph__node circle{fill:var(--primary);stroke:var(--paper-2);stroke-width:3}.graph__node text{font-family:var(--mono);font-size:9px;fill:var(--ink-soft)}.graph__node .branch-label{fill:var(--warning);font-weight:700}@media(prefers-reduced-motion:reduce){.graph__node{transition:none}}
+.viz-section { padding: 16px; border: 0; border-radius: 0; background: transparent; } header { display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;letter-spacing:.13em;text-transform:uppercase } header b{font-family:var(--serif-tc);font-weight:400}.empty{font-family:var(--serif-tc);color:var(--ink-faint);font-size:11px;line-height:1.7;margin:14px 0 0}svg{width:100%;margin-top:12px;overflow:visible}path{fill:none;stroke:var(--secondary);stroke-width:1.5}.graph__node{transition:transform 280ms ease}.graph__node circle{fill:var(--primary);stroke:var(--paper-2);stroke-width:3}.graph__node text{font-family:var(--mono);font-size:9px;fill:var(--ink-soft)}.graph__node .branch-label{fill:var(--warning);font-weight:700}@media(prefers-reduced-motion:reduce){.graph__node{transition:none}}
 </style>

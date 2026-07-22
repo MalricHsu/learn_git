@@ -35,6 +35,14 @@ export const commands = [
       en: "Before Git can track a single change, it needs a place to store history. init is the very first step of every project you start from scratch — the blank first page of the notebook.",
       zh: "在 Git 能追蹤任何變動之前，它需要一個地方存放歷史。init 是你從零開始的每個專案的第一步——筆記本的空白第一頁。",
     },
+    scenario: {
+      en: "Use git init when a folder already contains work that you now want Git to manage, or when you are starting a local project from an empty directory.",
+      zh: "當你已經有一個放著程式碼、筆記或設計稿的資料夾，現在想開始記錄它的版本時，就會使用 git init。從空資料夾開始新的本機專案時也一樣；但如果專案已經存在 GitHub，通常應該使用 git clone，而不是再次初始化。",
+    },
+    internals: {
+      en: "Git creates a hidden .git directory containing the object database, references, configuration, and the information needed to identify the current branch.",
+      zh: "執行後，Git 會在目前資料夾裡建立隱藏的 .git 目錄。裡面保存物件資料庫、分支指標、HEAD 與儲存庫設定；你的工作檔案不會被搬動，也還沒有任何版本被建立。刪除 .git 才會移除這個資料夾的 Git 歷史。",
+    },
     workflow: wf(2),
     workflowNote: { en: "init prepares the Repository so it can receive history.", zh: "init 讓「儲存庫」準備好接收歷史紀錄。" },
     syntax: [
@@ -45,6 +53,10 @@ export const commands = [
       { t: "cmd", parts: [["cmd", "git"], ["", " init"]] },
     ],
     output: "Initialized empty Git repository in /project/.git/",
+    outputNote: {
+      en: "This confirms that the repository metadata was created. It does not mean your files are tracked or committed yet.",
+      zh: "這行訊息代表 Git 已成功建立儲存庫的內部資料，但不代表檔案已被追蹤，也不代表已經產生 Commit。接下來可以先用 git status 查看狀態，再使用 git add 與 git commit 建立第一個版本。",
+    },
     mistakes: [
       { en: "Running init inside an existing repo — creating a repo within a repo.", zh: "在既有儲存庫裡再次 init，變成儲存庫中的儲存庫。" },
       { en: "Forgetting that init alone tracks nothing; you still need git add.", zh: "以為 init 就會開始追蹤，其實還需要 git add。" },
@@ -484,6 +496,88 @@ export const commands = [
     related: ["git-restore", "git-log", "git-commit"],
   },
 ];
+
+const editorialExtras = {
+  "git-clone": {
+    scenario: { zh: "當你要加入一個已存在於 GitHub、GitLab 或公司伺服器的專案時，使用 git clone 取得完整副本。它適合第一次把專案帶到本機；之後更新同一份專案，通常改用 git pull 或 git fetch。" },
+    internals: { zh: "Git 會下載遠端儲存庫的物件與提交歷史，建立工作目錄，設定 origin 遠端名稱，並讓本機分支追蹤對應的遠端分支。因此 clone 不只是下載檔案，也帶回版本歷史與遠端關係。" },
+    outputNote: { zh: "輸出會依序顯示物件計數、壓縮與接收進度。看到完成訊息後，進入新建立的資料夾並執行 git status，就能確認目前分支及它追蹤的遠端分支。" },
+  },
+  "git-status": {
+    scenario: { zh: "準備暫存、提交、切換分支或推送之前，都可以先執行 git status。它是最安全的確認動作，能快速回答目前在哪個分支、哪些檔案有變動，以及哪些內容已準備進入下一次提交。" },
+    internals: { zh: "Git 會比較三個位置：HEAD 指向的最新提交、暫存區，以及工作目錄。比較結果決定檔案顯示為未追蹤、已修改或已暫存；status 本身只讀取狀態，不會更改任何檔案。" },
+    outputNote: { zh: "先看分支名稱，再依序閱讀 staged、not staged 與 untracked 區域。輸出中的提示指令只是建議，不會自動執行；沒有變動時會看到 working tree clean。" },
+  },
+  "git-add": {
+    scenario: { zh: "完成一小段修改並決定哪些內容要進入下一個版本時，使用 git add。你可以逐一加入檔案，讓一個提交只包含同一件事；也可以在確認所有變動相關後一次加入目前目錄。" },
+    internals: { zh: "git add 會把指定檔案當下的內容寫入 Git 物件資料庫，並更新暫存區索引。它保存的是那一刻的內容快照；之後若再次修改同一檔案，新變動仍留在工作目錄，需要再次 add。" },
+    outputNote: { zh: "成功的 git add 通常不顯示任何文字。請接著執行 git status，確認檔案已出現在 Changes to be committed；若位置不對，可以在提交前把它移出暫存區。" },
+  },
+  "git-commit": {
+    scenario: { zh: "當暫存區已經整理成一個完整、可說明的改動時，使用 git commit 建立版本。適合在完成一個小功能、修正一個錯誤或更新一份文件後提交，而不是等到一天結束才全部混在一起。" },
+    internals: { zh: "Git 會根據暫存區建立新的樹狀快照，產生包含作者、時間、訊息與父提交的 Commit 物件，接著把目前分支指標移到新 Commit。工作目錄中未暫存的內容不會被包含。" },
+    outputNote: { zh: "輸出包含所在分支、短版 Commit ID、提交訊息，以及變更檔案與行數統計。完成後可用 git status 確認剩餘變動，或以 git log 查看新版本是否出現在歷史中。" },
+  },
+  "git-log": {
+    scenario: { zh: "想知道最近做了哪些修改、尋找某個版本，或在合併與回復之前確認歷史時，使用 git log。精簡的 oneline 模式適合快速掃描，完整模式則能查看作者、時間與完整訊息。" },
+    internals: { zh: "Git 從目前 HEAD 指向的 Commit 開始，沿著父提交關係向過去走訪。log 不會修改歷史，只是用不同格式呈現可到達的 Commit；加入圖形與全部分支參數時，也能看到分支如何分岔與合併。" },
+    outputNote: { zh: "每一行通常包含 Commit ID 與提交訊息，最上方是較新的版本。HEAD 與分支標籤指出目前所在位置；需要離開分頁檢視器時按 q，不必關閉終端機。" },
+  },
+  "git-branch": {
+    scenario: { zh: "準備開發新功能、修正問題，或想在不影響主線的情況下嘗試做法時，先建立分支。清楚的分支名稱能表達工作目的，例如 feature/login 或 fix/navbar。" },
+    internals: { zh: "建立分支不會複製整份專案；Git 只新增一個指向目前 Commit 的輕量指標。新分支建立後 HEAD 仍留在原分支，必須再使用 git switch 才會切換工作位置。" },
+    outputNote: { zh: "成功建立分支通常沒有輸出。執行 git branch 可以看到完整清單，星號表示目前分支；若名稱已存在，Git 會拒絕建立並顯示對應錯誤。" },
+  },
+  "git-switch": {
+    scenario: { zh: "需要從主線移到功能分支繼續工作，或完成任務後回到 main 時，使用 git switch。切換前先確認工作目錄，避免尚未提交的變動與目標分支內容互相衝突。" },
+    internals: { zh: "Git 會讓 HEAD 指向目標分支，並更新工作目錄與暫存區，使它們符合該分支目前的 Commit。未提交變動若能安全保留會跟著移動，可能覆寫內容時 Git 會阻止切換。" },
+    outputNote: { zh: "成功時會顯示已切換到哪個分支。接著可用 git status 再確認分支名稱；若 Git 阻止切換，先提交、還原或使用 git stash 暫時收起目前變動。" },
+  },
+  "git-merge": {
+    scenario: { zh: "功能分支完成並通過檢查後，先切回要接收成果的分支，再使用 git merge 合併。團隊也常透過 Pull Request 完成相同概念的整合與審查。" },
+    internals: { zh: "Git 會尋找兩條歷史的共同祖先，再計算需要整合的變動。若主線沒有新增 Commit，可能只移動指標形成 fast-forward；兩邊都有進展時則建立合併提交，衝突時暫停等待處理。" },
+    outputNote: { zh: "Fast-forward 代表只移動分支指標；Merge made 表示產生新的合併提交。若列出 CONFLICT，先打開衝突檔案完成選擇，再 add 並 commit 才能結束合併。" },
+  },
+  "git-rebase": {
+    scenario: { zh: "功能分支落後主線，而你希望在合併前整理出線性的提交歷史時，可以使用 rebase。它適合整理尚未分享的個人分支；已被其他人使用的公開歷史不宜任意改寫。" },
+    internals: { zh: "Git 先找出目前分支獨有的 Commit，暫時移開，將分支移到新的基底，再逐一重播這些變動。重播後會產生新的 Commit ID，即使檔案內容看起來相同，歷史也已被改寫。" },
+    outputNote: { zh: "成功訊息表示分支已更新到新的基底。遇到衝突時，修正並 add 後使用 rebase --continue；想放棄整個過程則使用 rebase --abort 回到開始前。" },
+  },
+  "git-fetch": {
+    scenario: { zh: "想先查看遠端有什麼新進度，又不希望立刻改動目前工作分支時，使用 git fetch。它適合在合併前審查同事更新，或確認遠端分支與標籤的最新狀態。" },
+    internals: { zh: "Git 下載本機尚未擁有的物件，並更新 origin/main 這類遠端追蹤分支。本機 main、工作目錄與暫存區都不會移動，因此 fetch 是取得資訊而不立即整合的安全動作。" },
+    outputNote: { zh: "輸出會列出新增或更新的遠端參照。完成後可用 git log main..origin/main 查看遠端多出的 Commit，再自行決定要 merge、rebase，或暫時不處理。" },
+  },
+  "git-pull": {
+    scenario: { zh: "準備開始工作或推送前，需要把目前分支更新到遠端最新狀態時，使用 git pull。執行前最好保持工作目錄乾淨，並先理解團隊採用 merge 還是 rebase 的同步策略。" },
+    internals: { zh: "pull 其實先執行 fetch 下載遠端更新，再把遠端追蹤分支整合進目前分支。預設可能使用 merge，也能設定為 rebase；因此它會直接改變本機分支與工作目錄。" },
+    outputNote: { zh: "Already up to date 代表沒有新內容；Fast-forward 表示分支直接前進。若自動整合失敗，輸出會列出衝突檔案，需要完成處理後才能繼續工作。" },
+  },
+  "git-push": {
+    scenario: { zh: "本機 Commit 已完成並確認無誤，希望備份到遠端、交給同事審查或分享分支時，使用 git push。第一次推送新分支通常要設定 upstream，後續才能直接使用簡短指令。" },
+    internals: { zh: "Git 會找出遠端缺少的物件並上傳，再要求遠端移動對應分支指標。如果遠端分支包含本機沒有的歷史，為避免覆蓋他人工作，普通 push 會被拒絕。" },
+    outputNote: { zh: "輸出中的 main -> main 表示哪個本機分支更新了哪個遠端分支。Rejected 通常代表遠端已前進，應先 pull 或 fetch 理解差異，不要直接使用強制推送。" },
+  },
+  "git-stash": {
+    scenario: { zh: "工作做到一半，突然需要切換分支處理緊急問題，但目前變動還不適合提交時，使用 git stash 暫時收起。處理完成後回到原分支，再把這份工作取回。" },
+    internals: { zh: "Git 會把已追蹤檔案在工作目錄與暫存區的變動保存成特殊的 stash 記錄，接著讓工作目錄回到乾淨狀態。未追蹤檔案預設不包含，除非加上對應參數。" },
+    outputNote: { zh: "輸出會顯示 stash 建立在哪個分支及當時的 Commit。可用 stash list 查看清單；apply 會保留記錄，pop 會套用後移除，若產生衝突仍需手動解決。" },
+  },
+  "git-restore": {
+    scenario: { zh: "修改檔案後發現方向錯誤，想捨棄尚未提交的內容，或需要把檔案移出暫存區時，使用 git restore。執行前要確認那些變動確實不再需要。" },
+    internals: { zh: "Git 會從指定來源取出檔案內容，覆寫工作目錄或暫存區。預設來源通常是暫存區；搭配 staged 或 source 時可明確指定要還原哪個位置，但不會移動分支歷史。" },
+    outputNote: { zh: "成功通常沒有輸出，請用 git status 與 git diff 確認結果。工作目錄中被覆寫且未提交的內容通常無法由 Git 找回，因此不要把 restore 當成可隨意復原的動作。" },
+  },
+  "git-reset": {
+    scenario: { zh: "提交太早、暫存了錯誤檔案，或需要讓目前分支回到較早位置時，使用 git reset。先判斷只是要取消暫存、保留修改，還是連工作內容都要捨棄，再選擇模式。" },
+    internals: { zh: "reset 首先移動目前分支指標；soft 只移動指標，mixed 再重設暫存區，hard 還會覆寫工作目錄。三種模式影響範圍不同，hard 可能讓未提交內容永久消失。" },
+    outputNote: { zh: "reset 成功常沒有一般訊息，範例中的 HEAD 後退但暫存內容保留，是 soft 模式的結果。接著應用 git status 與 git log 同時確認檔案狀態和分支位置。" },
+  },
+};
+
+for (const command of commands) {
+  if (editorialExtras[command.slug]) Object.assign(command, editorialExtras[command.slug]);
+}
 
 // ---------------------------------------------------------------- Vocabulary
 export const vocabulary = [
