@@ -17,11 +17,11 @@ test("logo contains a GD newspaper seal and wordmark", () => {
   assert.ok(logo.includes('aria-label="Git Daily"'));
 });
 
-test("navigation and homepage use compact and masthead logo variants", () => {
+test("logo stays in navigation and does not appear in the homepage masthead", () => {
   assert.ok(nav.includes("GitDailyLogo"));
   assert.ok(nav.includes('variant="compact"'));
-  assert.ok(home.includes("GitDailyLogo"));
-  assert.ok(home.includes('variant="masthead"'));
+  assert.equal(home.includes("GitDailyLogo"), false);
+  assert.ok(home.includes("<h1>Git Daily</h1>"));
 });
 
 test("document links to a matching SVG favicon", () => {

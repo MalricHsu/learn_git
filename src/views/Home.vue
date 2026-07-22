@@ -4,7 +4,6 @@ import { RouterLink } from "vue-router";
 import { store } from "../composables/useStore.js";
 import { bySlug } from "../data/commands.js";
 import { challenges, chapters } from "../data/challenges.js";
-import GitDailyLogo from "../components/GitDailyLogo.vue";
 
 const today = new Date().toLocaleDateString("en-US", {
   weekday: "long",
@@ -33,7 +32,7 @@ const feature = bySlug("git-init");
           ><span>Interactive Morning Edition</span>
         </div>
         <div class="masthead__title">
-          <GitDailyLogo variant="masthead" tag="h1" :tagline="true" />
+          <h1>Git Daily</h1>
           <p>像閱讀每日報紙一樣學習 Git</p>
         </div>
       </div>
