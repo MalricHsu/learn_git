@@ -1,6 +1,7 @@
 <script setup>
 import { RouterLink, useRoute } from "vue-router";
 import { store, toggleTheme } from "../composables/useStore.js";
+import GitDailyLogo from "./GitDailyLogo.vue";
 
 const route = useRoute();
 </script>
@@ -9,7 +10,7 @@ const route = useRoute();
   <nav class="subnav" aria-label="Primary">
     <div class="wrap subnav__inner">
       <RouterLink to="/" class="subnav__brand">
-        Git Daily<span>NO.001</span>
+        <GitDailyLogo variant="compact" />
       </RouterLink>
 
       <div class="subnav__links">

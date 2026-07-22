@@ -28,6 +28,8 @@ test("mistake journal explains errors and offers retry and management actions", 
 });
 
 test("router and primary navigation expose both library pages", () => {
+  assert.ok(router.includes("createWebHistory"));
+  assert.equal(router.includes("createWebHashHistory"), false);
   assert.ok(router.includes('path: "/favorites"'));
   assert.ok(router.includes('path: "/mistakes"'));
   assert.ok(nav.includes('to="/favorites"'));

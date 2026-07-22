@@ -11,7 +11,7 @@ test("home is an interactive newspaper front page", () => {
   for (const copy of ["今日頭版", "繼續闖關", "Today's Lesson", "Chapter Editions"]) {
     assert.ok(home.includes(copy), copy);
   }
-  assert.ok(home.includes("<h1>Git Daily</h1>"));
+  assert.ok(home.includes('tag="h1"'));
   assert.equal(home.includes("<h2>Git Daily</h2>"), false);
 });
 

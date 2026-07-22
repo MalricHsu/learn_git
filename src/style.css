@@ -163,8 +163,7 @@ body::before {
   border-bottom: var(--hairline); backdrop-filter: saturate(1.1);
 }
 .subnav__inner { display: flex; align-items: center; justify-content: space-between; padding: var(--s3) 0; }
-.subnav__brand { font-family: var(--display); font-weight: 800; font-size: 22px; letter-spacing: -.01em; }
-.subnav__brand span { font-family: var(--mono); font-size: 10px; letter-spacing: .2em; color: var(--ink-faint); vertical-align: middle; margin-left: var(--s2); }
+.subnav__brand { display: flex; align-items: center; }
 .subnav__links { display: flex; gap: var(--s5); align-items: center; }
 .subnav__links a { font-family: var(--mono); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); }
 .subnav__links a.active, .subnav__links a:hover { color: var(--primary); }
