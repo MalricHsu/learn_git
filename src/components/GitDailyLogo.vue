@@ -24,6 +24,8 @@ defineProps({
 .logo__copy { display: flex; flex-direction: column; align-items: flex-start; }
 .logo__wordmark { font-family: var(--display); font-size: 23px; font-weight: 800; letter-spacing: -.035em; white-space: nowrap; }
 .logo__copy small { margin-top: 4px; font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: .17em; white-space: nowrap; }
+/* The nav shows the wordmark only — the seal is reserved for the masthead. */
+.logo--compact .logo__seal { display: none; }
 .logo--masthead { gap: clamp(16px, 2vw, 28px); }
 .logo--masthead .logo__seal { width: clamp(62px, 7vw, 86px); height: clamp(62px, 7vw, 86px); border-width: 4px; font-size: clamp(25px, 2.8vw, 36px); }
 .logo--masthead .logo__seal::after { top: 8px; bottom: 8px; }

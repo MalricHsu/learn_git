@@ -24,38 +24,33 @@ test("reference article does not repeat English explanation paragraphs", () => {
   }
 });
 
-test("reference uses a single-screen book layout", () => {
+test("reference uses the long-form article layout", () => {
   for (const className of [
-    "reference-book",
-    "book-chapters",
-    "book-spread",
-    "book-page",
-    "book-command-strip",
-    "newspaper-title",
-    "book-lead-story",
-    "book-left-bottom",
+    "ref__head",
+    "ref__chapters",
+    "ref__strip",
+    "ref__title",
+    "ref__body",
+    "ref__main",
+    "ref__aside",
   ]) {
     assert.ok(source.includes(className), `render ${className}`);
   }
 
-  assert.equal(source.includes('class="sidebar__group"'), false);
-  assert.equal(source.includes('class="chapter-index"'), false);
+  // The old two-page "book spread" skeuomorphism is gone.
+  assert.equal(source.includes("book-spread"), false);
+  assert.equal(source.includes("book-page__label"), false);
+  assert.equal(source.includes("newspaper-title"), false);
   assert.equal(source.includes("Git 專有名詞"), false);
   assert.equal(source.includes("vocabulary.slice"), false);
-  assert.equal(source.includes("currentPage"), false);
-  assert.equal(source.includes("book-pagination"), false);
-  assert.doesNotMatch(source, /\.reference-book\s*\{[^}]*height:\s*calc\(100vh - 64px\)/s);
-  assert.equal(source.includes('class="book-title"'), false);
 });
 
-test("reference makes command navigation and terminal hierarchy explicit", () => {
-  assert.ok(source.includes("本章指令"));
-  assert.ok(source.includes("正在閱讀"));
-  assert.ok(source.includes("核心概念"));
-  assert.ok(source.includes("什麼時候會用到"));
-  assert.ok(source.includes("Git 內部發生了什麼"));
-  assert.ok(source.includes("實際操作"));
-  assert.match(source, /\.book-terminal-section\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/s);
+test("reference keeps the teaching headings and marks where you are", () => {
+  for (const heading of ["核心概念", "Git 內部發生了什麼", "在終端機試一次", "語法", "容易踩到的坑", "接著讀"])
+    assert.ok(source.includes(heading), heading);
+  // Chapter and command rows each show an active state, at different weights.
+  assert.match(source, /\.ref__chapters a\.active\s*\{[^}]*border-bottom-color:\s*var\(--primary\)/s);
+  assert.match(source, /\.ref__strip a\.active\s*\{[^}]*border-bottom-color:\s*var\(--primary\)/s);
 });
 
 test("git init provides a complete editorial explanation", () => {
@@ -77,24 +72,29 @@ test("every reference command provides complete editorial guidance", () => {
   }
 });
 
-test("usage timing and internals read as stacked sections", () => {
-  assert.match(source, /\.book-left-bottom\s*\{[^}]*grid-template-columns:\s*1fr/s);
+test("article runs long-form on the left with a reference sidebar", () => {
+  assert.match(source, /\.ref__body\s*\{[^}]*grid-template-columns:\s*minmax\(0, 7fr\) minmax\(230px, 3fr\)/s);
+  // The sidebar scrolls with the page — it is not pinned.
+  assert.equal(source.includes("position: sticky"), false);
 });
 
-test("article sections share one body size and newspaper endings", () => {
-  assert.match(source, /\.reference-book\s*\{[^}]*--book-body:\s*16px/s);
-  assert.match(source, /\.book-page section\s*\{[^}]*border-bottom:\s*3px double var\(--ink\)/s);
-  assert.match(source, /\.book-notes-grid\s*\{[^}]*grid-template-columns:\s*1fr/s);
-  assert.match(source, /\.book-related a\s*\{[^}]*border:\s*1px solid var\(--primary\)/s);
+test("the command name is the headline and saving it is a real control", () => {
+  assert.match(source, /\.ref__title h2\s*\{[^}]*font-family:\s*var\(--mono\)/s);
+  assert.match(source, /\.ref__title h2\s*\{[^}]*font-size:\s*clamp\(38px, 6\.6vw, 88px\)/s);
+  assert.ok(source.includes('class="ref__fav"'));
+  assert.ok(source.includes("toggleFavorite"));
 });
 
-test("book removes the center seam and groups follow-up content", () => {
-  assert.equal(source.includes(".book-spread::after"), false);
-  assert.ok(source.includes('class="book-footer-flex"'));
-  assert.match(source, /\.book-footer-flex\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/s);
-  assert.match(source, /\.book-footer-flex\s*\{[^}]*display:\s*flex/s);
-  assert.equal(source.includes(".book-pitfalls, .book-next"), false);
-  assert.match(source, /\.book-page--left \.book-workflow,[^}]*border-bottom:\s*0/s);
-  assert.match(source, /\.book-footer-flex\s*\{[^}]*border-top:\s*3px double var\(--ink\)/s);
-  assert.match(source, /\.book-footer-flex\s*\{[^}]*border-bottom:\s*0/s);
+test("destructive commands lead with what they cost", () => {
+  assert.ok(source.includes("ref__danger"));
+  for (const label of ["會失去什麼", "救不救得回來", "更安全的做法"])
+    assert.ok(source.includes(label), label);
+});
+
+test("reference reads as a connected newsroom learning story", () => {
+  assert.ok(source.includes('from "../data/referenceStories.js"'));
+  assert.ok(source.includes("storyBySlug(current.value.slug)"));
+  for (const part of ["story.scene", "story.choice", "story.result", "story.next"])
+    assert.ok(source.includes(part), part);
+  assert.ok(source.includes("為什麼現在用"));
 });

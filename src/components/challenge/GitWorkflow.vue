@@ -9,8 +9,6 @@ const flows = ["git add", "git commit"];
 </script>
 <template>
   <section class="viz-section workflow">
-    <header><b>Git 工作流程</b></header>
-    <p class="workflow__lead">檔案會從上往下，一步步被 Git 收好。</p>
     <div class="workflow__track">
       <template v-for="(zone, index) in zones" :key="zone.key">
         <div class="wf-zone" :class="{ 'wf-zone--filled': state[zone.key] && state[zone.key].length }">
@@ -32,9 +30,7 @@ const flows = ["git add", "git commit"];
   </section>
 </template>
 <style scoped>
-.viz-section { padding: 14px 16px 18px; border: 0; border-radius: 0; background: transparent; }
-header { font-family: var(--mono); font-size: 10px; letter-spacing: .13em; text-transform: uppercase; } header b { font-family: var(--serif-tc); font-weight: 400; }
-.workflow__lead { margin: 8px 0 13px; font-family: var(--serif-tc); font-size: 11px; color: var(--ink-faint); }
+.viz-section { padding: 6px 16px 18px; border: 0; border-radius: 0; background: transparent; }
 .workflow__track { display: flex; flex-direction: column; }
 .wf-zone { padding: 11px 13px; border: 1px solid var(--border); background: var(--paper-2); transition: border-color .25s var(--ease), background .25s var(--ease); }
 .wf-zone--filled { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, var(--paper-2)); }

@@ -1,15 +1,14 @@
 <script setup>
-import { computed } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { RouterLink } from "vue-router";
 import { store } from "../composables/useStore.js";
-import { bySlug } from "../data/commands.js";
 import { challenges, chapters } from "../data/challenges.js";
 
-const today = new Date().toLocaleDateString("en-US", {
-  weekday: "long",
+const today = new Date().toLocaleDateString("zh-TW", {
   year: "numeric",
   month: "long",
   day: "numeric",
+  weekday: "long",
 });
 const completed = computed(() => store.completedMissions.length);
 const progress = computed(() =>
@@ -20,7 +19,82 @@ const nextChallenge = computed(
     challenges.find((item) => !store.completedMissions.includes(item.id)) ||
     challenges[0],
 );
-const feature = bySlug("git-init");
+// The chapter the reader is standing in — drawn as HEAD on the commit spine.
+const headChapter = computed(() => nextChallenge.value.chapter);
+const countOf = (id) => challenges.filter((item) => item.chapter === id).length;
+// Jump straight to a chapter — its first challenge, or the furthest one the
+// reader has already reached inside it.
+function entryOf(chapterId) {
+  const inChapter = challenges.filter((item) => item.chapter === chapterId);
+  const open = inChapter.find(
+    (item) => !store.completedMissions.includes(item.id),
+  );
+  return (open || inChapter[0]).id;
+}
+
+/* The one animated moment on the page: the demo types itself, answers, holds,
+   then starts over. It only runs while actually on screen, and not at all when
+   the reader has asked for reduced motion. */
+const COMMAND = "git init";
+const TYPE_DELAY = 90;
+const ANSWER_PAUSE = 450;
+const HOLD = 3200;
+
+const typed = ref("");
+const answered = ref(false);
+const demoEl = ref(null);
+let timers = [];
+let observer = null;
+let running = false;
+
+function clearTimers() {
+  timers.forEach(clearTimeout);
+  timers = [];
+}
+
+function cycle() {
+  clearTimers();
+  typed.value = "";
+  answered.value = false;
+  const typedAt = 300 + COMMAND.length * TYPE_DELAY;
+  COMMAND.split("").forEach((char, i) => {
+    timers.push(setTimeout(() => (typed.value += char), 300 + i * TYPE_DELAY));
+  });
+  timers.push(setTimeout(() => (answered.value = true), typedAt + ANSWER_PAUSE));
+  timers.push(setTimeout(cycle, typedAt + ANSWER_PAUSE + HOLD));
+}
+
+function start() {
+  if (running) return;
+  running = true;
+  cycle();
+}
+
+function stop() {
+  running = false;
+  clearTimers();
+}
+
+onMounted(() => {
+  const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (still || !("IntersectionObserver" in window)) {
+    typed.value = COMMAND;
+    answered.value = true;
+    return;
+  }
+  observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => (entry.isIntersecting ? start() : stop()));
+    },
+    { threshold: 0.55 },
+  );
+  if (demoEl.value) observer.observe(demoEl.value);
+});
+
+onBeforeUnmount(() => {
+  clearTimers();
+  observer?.disconnect();
+});
 </script>
 
 <template>
@@ -28,8 +102,8 @@ const feature = bySlug("git-init");
     <header class="masthead">
       <div class="wrap">
         <div class="masthead__meta">
-          <span>Issue No.001 · 創刊號</span><span>{{ today }}</span
-          ><span>Interactive Morning Edition</span>
+          <span>第 001 號</span><span>{{ today }}</span
+          ><span>互動晨報</span>
         </div>
         <div class="masthead__title">
           <h1>Git Daily</h1>
@@ -38,108 +112,75 @@ const feature = bySlug("git-init");
       </div>
     </header>
 
-    <main class="wrap front-page">
-      <section class="front-page__lead">
-        <article class="lead-story reveal">
-          <p class="section-label"><span>Front Page</span><b>今日頭版</b></p>
-          <h2>Learn Git by watching ideas become history.</h2>
-          <p class="lead-story__zh">
-            看著檔案移動、版本誕生、分支交會，真正理解 Git。
+    <main class="wrap front">
+      <section class="hero">
+        <div class="hero__story">
+          <h2>看著想法變成歷史。</h2>
+          <p class="hero__en">Learn Git by watching ideas become history.</p>
+          <p class="hero__deck">
+            每輸入一個指令，工作流程、提交歷史與分支圖都會立刻回應。你是從變化裡看懂
+            Git，而不是背下語法。
           </p>
-          <p class="lead-story__deck">
-            Git Daily 是一本可以玩的 Git
-            教科書。每次輸入指令，工作流程、提交歷史與分支圖都會立即回應，讓你從變化中理解，而不是死背語法。
-          </p>
-          <div class="lead-story__actions">
+          <div class="hero__actions">
+            <RouterLink to="/reference" class="btn btn--ghost btn--lg"
+              >翻開手冊</RouterLink
+            >
             <RouterLink to="/game" class="btn btn--lg">{{
               completed ? "繼續闖關" : "開始第一關"
             }}</RouterLink>
           </div>
-        </article>
+        </div>
 
-        <aside class="continue-panel reveal">
-          <header><span>Continue Reading</span><b>繼續學習</b></header>
-          <p class="continue-panel__number">
-            {{ String(nextChallenge.no).padStart(2, "0") }}
+        <RouterLink
+          class="hero__next"
+          :to="{ path: '/game', query: { c: nextChallenge.id } }"
+        >
+          <p class="hero__next-label">下一關</p>
+          <p class="hero__next-no">{{ nextChallenge.code }}</p>
+          <h3>{{ nextChallenge.title.zh }}</h3>
+          <p class="hero__next-en">{{ nextChallenge.title.en }}</p>
+          <div class="hero__meter">
+            <div :style="{ width: progress + '%' }"></div>
+          </div>
+          <p class="hero__next-stat">
+            已完成 {{ completed }} / {{ challenges.length }} 關
           </p>
-          <small>Next Challenge · 下一關</small>
-          <h3>{{ nextChallenge.title.en }}</h3>
-          <p>{{ nextChallenge.title.zh }}</p>
-          <blockquote>{{ nextChallenge.summary.zh }}</blockquote>
-          <div class="continue-panel__progress">
-            <span>{{ completed }} / {{ challenges.length }} completed</span
-            ><span>{{ progress }}%</span>
-          </div>
-          <div class="progress">
-            <div class="progress__bar" :style="{ width: progress + '%' }"></div>
-          </div>
-          <RouterLink to="/game" class="continue-panel__link"
-            >繼續闖關 <span>→</span></RouterLink
-          >
-        </aside>
+        </RouterLink>
       </section>
 
-      <section class="today-lesson reveal">
-        <header class="edition-heading">
-          <div><span>Today's Lesson</span><b>今日一課</b></div>
-          <small>01 · Git Foundations</small>
-        </header>
-        <article class="lesson-layout">
-          <div class="lesson-copy">
-            <p class="eyebrow">Start Here · 從這裡開始</p>
-            <RouterLink :to="`/reference/${feature.slug}`"
-              ><h3>{{ feature.name }}</h3></RouterLink
-            >
-            <p class="lesson-copy__zh">{{ feature.tagline.zh }}</p>
-            <p>{{ feature.what.zh }}</p>
-            <RouterLink
-              :to="`/reference/${feature.slug}`"
-              class="btn btn--ghost"
-              >閱讀完整教學</RouterLink
-            >
-          </div>
-          <div class="lesson-terminal">
-            <div class="lesson-terminal__bar">
-              <i></i><i></i><i></i><span>gitdaily — zsh</span>
-            </div>
-            <pre><code><b>$</b> <span>git</span> init<br><em>Initialized empty Git repository in /project/.git/</em></code></pre>
-          </div>
-        </article>
+      <section class="demo reveal">
+        <div ref="demoEl" class="demo__terminal">
+          <pre><code><b>$</b> <span>{{ typed.slice(0, 3) }}</span>{{ typed.slice(3)
+            }}<i v-if="!answered" class="demo__caret"></i><template v-if="answered">
+<em>Initialized empty Git repository in /project/.git/</em>
+<b>$</b> <i class="demo__caret"></i></template></code></pre>
+        </div>
+        <p class="demo__caption">一行指令，一個資料夾就此擁有記憶。</p>
       </section>
 
-      <section class="chapter-editions reveal">
-        <header class="edition-heading">
-          <div><span>Chapter Editions</span><b>學習章節</b></div>
-          <p>從第一個版本，到安全整理歷史。</p>
-        </header>
-        <div class="chapter-editions__grid">
-          <RouterLink
+      <section class="log reveal">
+        <h2 class="log__title">七章，三十八關</h2>
+        <ol class="log__list">
+          <li
             v-for="chapter in chapters"
             :key="chapter.id"
-            to="/game"
-            class="chapter-edition"
-            ><span>CHAPTER {{ String(chapter.number).padStart(2, "0") }}</span>
-            <h3>{{ chapter.title.en }}</h3>
-            <p>{{ chapter.title.zh }}</p>
-            <small
-              >{{
-                challenges.filter((item) => item.chapter === chapter.id).length
-              }}
-              Challenges</small
-            ></RouterLink
+            class="log__item"
+            :class="{ 'is-head': chapter.id === headChapter }"
           >
-        </div>
+            <RouterLink
+              :to="{ path: '/game', query: { c: entryOf(chapter.id) } }"
+            >
+              <span class="log__ref">CH{{ chapter.number }}</span>
+              <span class="log__name">
+                <b>{{ chapter.title.zh }}</b>
+                <small>{{ chapter.title.en }}</small>
+              </span>
+              <span class="log__count">{{ countOf(chapter.id) }} 關</span>
+            </RouterLink>
+          </li>
+        </ol>
       </section>
 
-      <section class="reference-invitation reveal">
-        <div>
-          <span>Git Reference</span>
-          <h2>需要查指令時，再翻開手冊。</h2>
-        </div>
-        <RouterLink to="/reference" class="btn btn--ghost btn--lg"
-          >瀏覽完整手冊</RouterLink
-        >
-      </section>
     </main>
   </div>
 </template>
@@ -148,351 +189,381 @@ const feature = bySlug("git-init");
 .masthead__title p {
   margin: 0 0 6px;
   font-family: var(--serif-tc);
-  font-size: 18px;
+  font-size: 16px;
+  letter-spacing: 0.14em;
   color: var(--ink-soft);
 }
 .masthead__meta {
-  font-size: 14px;
+  font-size: 12px;
 }
-.front-page .btn {
-  font-size: 16px;
+.front {
+  padding-top: 72px;
+  padding-bottom: 96px;
 }
-.front-page {
-  padding-top: 34px;
-  padding-bottom: 80px;
-}
-.front-page__lead {
+
+/* ---------- Hero: one dominant statement, asymmetric split ---------- */
+.hero {
   display: grid;
-  grid-template-columns: minmax(0, 1.55fr) minmax(320px, 0.75fr);
-  gap: 54px;
-  padding-bottom: 42px;
-  border-bottom: 3px double var(--ink);
+  grid-template-columns: minmax(0, 8fr) minmax(196px, 2.2fr);
+  gap: 80px;
+  align-items: end;
+  padding-bottom: 84px;
 }
-.section-label,
-.edition-heading > div {
-  display: flex;
-  align-items: baseline;
-  gap: 14px;
+.hero__story h2 {
   margin: 0;
-  font-family: var(--mono);
-  font-size: 14px;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-.section-label b,
-.edition-heading b {
   font-family: var(--serif-tc);
-  font-size: 16px;
-  letter-spacing: 0.04em;
+  /* Sized so all nine characters stay on a single line at every width. */
+  font-size: clamp(24px, 4.4vw, 62px);
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
 }
-.lead-story h2 {
-  max-width: 760px;
-  margin: 20px 0 10px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(40px, 4.2vw, 56px);
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.035em;
+.hero__en {
+  margin: 26px 0 0;
+  font-family: var(--display);
+  font-size: 17px;
+  font-style: italic;
+  color: var(--ink-faint);
 }
-.lead-story__zh {
+.hero__deck {
+  max-width: 38ch;
   margin: 20px 0 0;
   font-family: var(--serif-tc);
-  font-size: clamp(20px, 2vw, 28px);
-  color: var(--primary);
-  font-weight: 700;
-}
-.lead-story__deck {
-  max-width: 54ch;
-  margin: 22px 0 0;
-  font-family: var(--serif-tc);
-  font-size: 18px;
-  line-height: 1.9;
+  font-size: 15px;
+  line-height: 2;
   color: var(--ink-soft);
-  font-weight: 700;
 }
-.lead-story__actions {
+.hero__actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 14px;
-  margin-top: 28px;
+  margin-top: 34px;
 }
-.text-link {
-  font-family: var(--mono);
-  font-size: 16px;
-  letter-spacing: 0.06em;
-  color: var(--primary);
-  border-bottom: 1px solid var(--secondary);
-  padding-bottom: 3px;
-}
-.continue-panel {
-  align-self: end;
-  padding: 20px 22px 16px;
-  border: 1px solid var(--border);
-  border-top: 4px double var(--ink);
-  background: var(--paper-2);
-  box-shadow: 0 16px 38px -28px rgba(35, 66, 51, 0.45);
-}
-.continue-panel header {
-  display: flex;
-  justify-content: space-between;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--border);
-  font-family: var(--mono);
-  font-size: 14px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-.continue-panel header b {
-  font-family: var(--serif-tc);
-  font-weight: 400;
-}
-.continue-panel__number {
-  float: right;
-  margin: 14px 0 0 16px;
-  font-family: var(--display);
-  font-size: 58px;
-  line-height: 0.8;
-  color: var(--secondary);
-}
-.continue-panel > small {
+
+/* Borderless — held together by alignment and one hairline, not a card. */
+.hero__next {
   display: block;
-  margin-top: 18px;
-  font-family: var(--mono);
-  font-size: 14px;
-  letter-spacing: 0.1em;
-  color: var(--ink-faint);
+  padding-bottom: 6px;
 }
-.continue-panel h3 {
-  margin: 6px 0 2px;
-  font-family: var(--display);
-  font-size: 28px;
+.hero__next:hover h3 {
+  color: var(--primary);
 }
-.continue-panel > p:not(.continue-panel__number) {
+.hero__next h3 {
+  transition: color 0.2s;
+}
+.hero__next-label {
   margin: 0;
   font-family: var(--serif-tc);
-  font-size: 18px;
-  color: var(--primary);
-}
-.continue-panel blockquote {
-  clear: both;
-  margin: 18px 0 16px;
-  padding: 12px 0;
-  border-top: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  font-family: var(--serif-tc);
-  font-size: 17px;
-  line-height: 1.7;
-  color: var(--ink-soft);
-}
-.continue-panel__progress {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-  font-family: var(--mono);
-  font-size: 14px;
+  font-size: 13px;
   color: var(--ink-faint);
 }
-.continue-panel__link {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
-  gap: 12px;
-  margin-top: 14px;
-  padding: 12px 0 2px;
-  border-top: 3px double var(--ink);
-  font-family: var(--serif-tc);
-  font-size: 18px;
+.hero__next-no {
+  margin: 2px 0 0;
+  font-family: var(--display);
+  /* Heavy — a large figure at 400 reads thin and loses its presence. */
+  font-weight: 800;
+  font-size: 68px;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
   color: var(--primary);
+}
+.hero__next h3 {
+  margin: 16px 0 1px;
+  font-family: var(--serif-tc);
+  font-size: 22px;
   font-weight: 700;
 }
-.today-lesson,
-.chapter-editions {
-  padding: 42px 0;
-  border-bottom: 1px solid var(--ink);
-}
-.edition-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  padding-bottom: 13px;
-  border-bottom: 2px solid var(--ink);
-}
-.edition-heading > p,
-.edition-heading > small {
+.hero__next-en {
   margin: 0;
-  font-family: var(--mono);
+  font-family: var(--display);
   font-size: 14px;
   color: var(--ink-faint);
 }
-.lesson-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(420px, 1.1fr);
-  gap: 48px;
-  align-items: center;
-  padding: 34px 0 4px;
+.hero__meter {
+  height: 2px;
+  margin: 22px 0 8px;
+  background: var(--border);
 }
-.lesson-copy h3 {
-  margin: 12px 0 3px;
+.hero__meter div {
+  height: 100%;
+  background: var(--primary);
+  transition: width 0.6s var(--ease);
+}
+.hero__next-stat {
+  margin: 0;
   font-family: var(--mono);
-  font-size: 36px;
-  color: var(--primary);
-}
-.lesson-copy__zh {
-  font-family: var(--serif-tc);
-  font-size: 20px;
-  color: var(--ink);
-}
-.lesson-copy > p:last-of-type {
-  max-width: 48ch;
-  margin-bottom: 24px;
-  font-size: 18px;
-  line-height: 1.8;
-  color: var(--ink-soft);
-}
-.lesson-terminal {
-  overflow: hidden;
-  border: 1px solid var(--code-line);
-  border-radius: 8px;
-  background: var(--terminal-bg);
-  box-shadow: var(--shadow);
-}
-.lesson-terminal__bar {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  padding: 13px 16px;
-  border-bottom: 1px solid var(--code-line);
-}
-.lesson-terminal__bar i {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--danger);
-}
-.lesson-terminal__bar i:nth-child(2) {
-  background: var(--warning);
-}
-.lesson-terminal__bar i:nth-child(3) {
-  background: var(--success);
-}
-.lesson-terminal__bar span {
-  margin-left: auto;
-  font-family: var(--mono);
-  font-size: 14px;
-  letter-spacing: 0.12em;
+  font-size: 12px;
   color: var(--ink-faint);
 }
-.lesson-terminal pre {
-  margin: 0;
-  min-height: 145px;
-  padding: 32px;
+
+/* ---------- Demo: the terminal breaks the text column ---------- */
+.demo {
+  margin: 0 calc(var(--gutter) * -1) 88px;
+}
+.demo__terminal {
   background: var(--terminal-bg);
+  padding: 44px clamp(24px, 5vw, 76px);
+}
+.demo__terminal pre {
+  /* Three lines are reserved up front so the answer cannot shift the page. */
+  min-height: calc(3 * 2.1em);
+  margin: 0;
+  font-family: var(--mono);
+  font-size: clamp(15px, 1.7vw, 22px);
+  line-height: 2.1;
   color: var(--code-fg);
-  font-family: var(--mono);
-  font-size: 16px;
-  line-height: 2;
 }
-.lesson-terminal pre b {
+.demo__caret {
+  display: inline-block;
+  width: 0.5em;
+  height: 1em;
+  margin-left: 3px;
+  background: var(--success);
+  vertical-align: -0.14em;
+  animation: demo-blink 1.05s step-end infinite;
+}
+@keyframes demo-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.demo__terminal em {
+  display: inline-block;
+  animation: demo-rise 0.4s var(--ease) both;
+}
+@keyframes demo-rise {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .demo__caret {
+    animation: none;
+  }
+  .demo__terminal em {
+    animation: none;
+  }
+}
+.demo__terminal b {
   color: var(--success);
+  font-weight: 400;
 }
-.lesson-terminal pre span {
+.demo__terminal span {
   color: var(--warning);
 }
-.lesson-terminal pre em {
+.demo__terminal em {
   color: var(--ink-faint);
   font-style: normal;
 }
-.chapter-editions__grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.demo__caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 18px;
+  margin: 16px 0 0;
+  padding: 0 var(--gutter);
+  font-family: var(--serif-tc);
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+/* ---------- The commit spine: chapters drawn as a git log ---------- */
+.log {
+  margin-bottom: 88px;
+}
+.log__title {
+  margin: 0 0 34px;
+  font-family: var(--serif-tc);
+  font-size: clamp(26px, 3vw, 40px);
+  font-weight: 900;
+}
+.log__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 34px;
   border-left: 1px solid var(--border);
 }
-.chapter-edition {
-  min-height: 160px;
-  padding: 24px;
-  border-right: 1px solid var(--border);
-  border-bottom: 1px solid var(--border);
-  transition: background 0.2s;
+.log__item {
+  position: relative;
 }
-.chapter-edition:hover {
-  background: var(--secondary-2);
+/* Each chapter is a commit node on the branch line. */
+.log__item::before {
+  content: "";
+  position: absolute;
+  left: -40px;
+  top: 26px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1px solid var(--secondary);
+  background: var(--paper);
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 }
-.chapter-edition > span,
-.chapter-edition small {
+.log__item.is-head::before {
+  border-color: var(--primary);
+  background: var(--primary);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+.log__item a {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 24px;
+  padding: 18px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+.log__item:last-child a {
+  border-bottom: 0;
+}
+.log__item a:hover .log__name b {
+  color: var(--primary);
+}
+.log__ref {
   font-family: var(--mono);
-  font-size: 14px;
-  letter-spacing: 0.1em;
+  font-size: 13px;
   color: var(--ink-faint);
 }
-.chapter-edition h3 {
-  margin: 18px 0 3px;
+.log__name b {
+  font-family: var(--serif-tc);
+  font-size: 21px;
+  font-weight: 700;
+  transition: color 0.2s;
+}
+.log__name small {
+  margin-left: 12px;
   font-family: var(--display);
-  font-size: 26px;
-}
-.chapter-edition p {
-  margin: 0 0 18px;
-  font-family: var(--serif-tc);
-  font-size: 17px;
-  color: var(--primary);
-}
-.reference-invitation {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 32px;
-  padding: 42px 0;
-  border-bottom: 3px double var(--ink);
-}
-.reference-invitation span {
-  font-family: var(--mono);
   font-size: 14px;
-  letter-spacing: 0.12em;
+  color: var(--ink-faint);
+}
+.log__count {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+}
+.log__item.is-head .log__ref {
   color: var(--primary);
 }
-.reference-invitation h2 {
-  margin: 7px 0 0;
-  font-family: var(--serif-tc);
-  font-size: 28px;
-  font-weight: 600;
-}
+
+
 @media (max-width: 900px) {
-  .front-page__lead,
-  .lesson-layout {
+  .front {
+    padding-top: 48px;
+    padding-bottom: 72px;
+  }
+  .hero {
     grid-template-columns: 1fr;
+    gap: 48px;
+    padding-bottom: 60px;
   }
-  .front-page__lead {
-    gap: 38px;
+  .hero__next {
+    padding-top: 28px;
+    border-top: 1px solid var(--border);
   }
-  .continue-panel {
-    width: 100%;
-  }
-  .chapter-editions__grid {
-    grid-template-columns: repeat(2, 1fr);
+  .hero__next-no {
+    font-size: 58px;
   }
 }
 @media (max-width: 600px) {
-  .front-page {
+  .masthead__title p {
+    font-size: 14px;
+    letter-spacing: 0.08em;
+  }
+  .front {
+    padding-top: 34px;
+    padding-bottom: 56px;
+  }
+  .hero {
+    gap: 36px;
+    padding-bottom: 48px;
+  }
+  .hero__story h2 {
+    font-size: clamp(32px, 10.5vw, 46px);
+    line-height: 1.2;
+    white-space: normal;
+  }
+  .hero__en {
+    margin-top: 16px;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+  .hero__deck {
+    max-width: none;
+    margin-top: 16px;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+  .hero__actions {
+    margin-top: 26px;
+  }
+  .hero__next {
     padding-top: 24px;
   }
-  .lead-story h2 {
-    font-size: 40px;
+  .hero__next-no {
+    font-size: 50px;
   }
-  .lead-story__actions,
-  .edition-heading,
-  .reference-invitation {
-    align-items: flex-start;
-    flex-direction: column;
+  .demo {
+    margin-bottom: 60px;
   }
-  .chapter-editions__grid {
+  .demo__terminal pre {
+    font-size: 14px;
+    line-height: 1.8;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+  .demo__caption {
+    margin-top: 12px;
+    font-size: 14px;
+  }
+  .log {
+    margin-bottom: 56px;
+  }
+  .log__title {
+    margin-bottom: 22px;
+  }
+  .log__list {
+    padding-left: 28px;
+  }
+  .log__item::before {
+    left: -34px;
+  }
+  .log__item a {
+    grid-template-columns: 50px minmax(0, 1fr);
+    gap: 14px;
+    padding: 16px 0;
+  }
+  .log__count {
+    grid-column: 2;
+  }
+  .log__name small {
+    display: block;
+    margin: 3px 0 0;
+  }
+  .demo__terminal {
+    padding: 30px 22px;
+  }
+}
+@media (max-width: 420px) {
+  .hero__actions {
+    display: grid;
     grid-template-columns: 1fr;
   }
-  .chapter-edition {
-    min-height: 130px;
+  .hero__actions .btn {
+    width: 100%;
   }
-  .lesson-terminal pre {
-    min-height: 120px;
-    padding: 22px;
-    font-size: 16px;
+  .log__item a {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px;
+  }
+  .log__name b {
+    font-size: 19px;
+  }
+  .demo__terminal {
+    padding: 26px 18px;
   }
 }
 </style>

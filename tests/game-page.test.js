@@ -6,7 +6,7 @@ const game = await readFile(new URL("../src/views/Game.vue", import.meta.url), "
 
 test("game page composes the challenge experience", () => {
   for (const name of ["ChallengeRoadmap", "ChallengeBrief", "GitVisualization", "Terminal"]) assert.ok(game.includes(name));
-  for (const text of ["Challenge", "闖關", "CHALLENGES", "COMPLETE"]) assert.ok(game.includes(text));
+  for (const text of ["闖關學習", "闖關完成", "累計 XP", "已完成"]) assert.ok(game.includes(text), text);
 });
 
 test("game page is terminal-only and removes old dashboard panels", () => {
@@ -30,8 +30,9 @@ test("roadmap sits above the two-column challenge workspace", () => {
 
 test("page masthead keeps its editorial copy together without orphaned words", () => {
   assert.ok(game.includes("challenge-head__intro"));
-  assert.ok(game.includes("Challenge Edition"));
-  assert.equal(game.includes("每日闖關"), false);
+  // Section names are Chinese and identical to the nav and footer wording.
+  assert.ok(game.includes("闖關學習"));
+  assert.equal(game.includes("Challenge Edition"), false);
   assert.match(game, /\.challenge-head\s*\{[^}]*border-top:\s*3px double var\(--ink\)/s);
   assert.match(game, /\.challenge-progress\s*\{[^}]*border-left:\s*1px solid var\(--border\)/s);
 });

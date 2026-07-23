@@ -1,22 +1,45 @@
 <script setup>
-defineProps({
+import { computed } from "vue";
+import { bySlug } from "../../data/commands.js";
+
+const props = defineProps({
   challenge: { type: Object, required: true },
   hintLevel: { type: Number, required: true },
 });
 defineEmits(["reveal-hint", "collapse-hints"]);
+
+// Link the focus command to its reference article when one exists. Finals
+// list a whole sequence, so they stay plain text.
+const focusSlug = computed(() => {
+  const focus = props.challenge.focus || "";
+  if (focus.includes("→")) return null;
+  const slug = focus.trim().replace(/\s+/g, "-");
+  return bySlug(slug) ? slug : null;
+});
 </script>
 
 <template>
   <section class="brief">
-    <span class="badge badge--solid brief__badge">{{ challenge.final ? "Final" : `CH.${String(challenge.no).padStart(2, "0")}` }}</span>
-    <div class="brief__headline">
-      <h2>{{ challenge.title.en }}</h2>
-      <span class="brief__zh">{{ challenge.title.zh }}</span>
+    <span class="badge badge--solid brief__badge">{{ challenge.code }}</span>
+    <div class="brief__lead">
+      <div class="brief__headline">
+        <h2>{{ challenge.title.en }}</h2>
+        <span class="brief__zh">{{ challenge.title.zh }}</span>
+      </div>
+      <dl class="brief__focus">
+        <dt>本關指令</dt>
+        <dd>
+          <RouterLink v-if="focusSlug" :to="`/reference/${focusSlug}`" class="brief__focus-link" title="到手冊看這個指令">
+            <code>{{ challenge.focus }}</code><span>手冊 →</span>
+          </RouterLink>
+          <code v-else>{{ challenge.focus }}</code>
+        </dd>
+      </dl>
     </div>
+    <div class="brief__side">
     <dl class="brief__goal"><dt>學習目標</dt><dd>{{ challenge.learningConcept.zh }}</dd></dl>
     <div class="brief__stats">
       <dl><dt>難度</dt><dd>{{ challenge.difficulty }}</dd></dl>
-      <dl><dt>等級</dt><dd>{{ challenge.level }}</dd></dl>
       <dl><dt>獎勵</dt><dd>+{{ challenge.xp }} XP</dd></dl>
     </div>
     <div class="brief__hint">
@@ -29,16 +52,27 @@ defineEmits(["reveal-hint", "collapse-hints"]);
         <li v-for="hint in challenge.hints.slice(0, hintLevel)" :key="hint">{{ hint }}</li>
       </TransitionGroup>
     </div>
+    </div>
   </section>
 </template>
 
 <style scoped>
 .brief { margin-top: 12px; display: flex; align-items: center; gap: 18px 30px; flex-wrap: wrap; padding: 6px 0 15px; border-bottom: 1px solid var(--border); }
-.brief__badge { flex: none; }
-.brief__headline { display: flex; align-items: baseline; gap: 11px; flex: none; min-width: 0; }
+.brief__badge { flex: none; align-self: center; }
+.brief__lead { flex: none; min-width: 0; display: flex; flex-direction: column; gap: 9px; }
+.brief__headline { display: flex; align-items: baseline; gap: 11px; min-width: 0; }
 .brief__headline h2 { margin: 0; font-family: var(--display); font-size: clamp(24px, 2.3vw, 32px); line-height: 1; }
 .brief__zh { font-family: var(--serif-tc); font-size: 16px; color: var(--ink-soft); white-space: nowrap; }
-.brief__goal { flex: none; margin: 0 0 0 auto; padding-left: 16px; border-left: 3px solid var(--primary); }
+.brief__focus { margin: 0; display: flex; align-items: center; gap: 11px; }
+.brief__focus dt { flex: none; font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); }
+.brief__focus dd { margin: 0; min-width: 0; }
+.brief__focus code { display: inline-block; padding: 3px 10px; border: 1px solid var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); font-family: var(--mono); font-size: 13px; color: var(--primary); }
+.brief__focus-link { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; }
+.brief__focus-link span { font-family: var(--serif-tc); font-size: 11px; color: var(--ink-faint); transition: color .18s; }
+.brief__focus-link:hover code { background: var(--primary); color: var(--paper); }
+.brief__focus-link:hover span { color: var(--primary); }
+.brief__side { flex: none; margin-left: auto; display: flex; align-items: center; gap: 24px; }
+.brief__goal { flex: none; margin: 0; padding-left: 16px; border-left: 3px solid var(--primary); }
 .brief__goal dt { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint); }
 .brief__goal dd { margin: 4px 0 0; font-family: var(--serif-tc); font-size: 15px; color: var(--primary); }
 .brief__stats { display: flex; gap: 24px; flex: none; }

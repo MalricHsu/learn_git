@@ -13,18 +13,23 @@ defineEmits(["select"]);
 const track = ref(null);
 const visibleChallenges = computed(() => props.challenges);
 
-const chapterNumber = (chapterId) => props.chapters.find((c) => c.id === chapterId)?.number || 0;
-function cardCode(challenge) {
-  const within = props.challenges.filter((c) => c.chapter === challenge.chapter).findIndex((c) => c.id === challenge.id) + 1;
-  return `CH${chapterNumber(challenge.chapter)}.${within}`;
-}
 
 function slide(direction) {
   track.value?.scrollBy({ left: direction * Math.min(720, track.value.clientWidth * 0.75), behavior: "smooth" });
 }
 
 function revealCurrent() {
-  nextTick(() => track.value?.querySelector(".current")?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" }));
+  nextTick(() => {
+    const rail = track.value;
+    const card = rail?.querySelector(".current");
+    if (!rail || !card) return;
+    // Scroll the rail horizontally only. scrollIntoView would also drag the
+    // whole page vertically, fighting the view's own scroll-to-top.
+    const railBox = rail.getBoundingClientRect();
+    const cardBox = card.getBoundingClientRect();
+    const delta = cardBox.left - railBox.left - (railBox.width - cardBox.width) / 2;
+    rail.scrollBy({ left: delta, behavior: "smooth" });
+  });
 }
 
 watch(() => props.currentId, revealCurrent, { immediate: true });
@@ -44,7 +49,7 @@ watch(() => props.currentId, revealCurrent, { immediate: true });
           :disabled="isLocked(challenge.id)"
           @click="$emit('select', challenge.id)"
         >
-          <span class="roadmap__mark">{{ cardCode(challenge) }}</span>
+          <span class="roadmap__mark">{{ challenge.code }}</span>
           <span class="roadmap__copy">
             <b>{{ challenge.title.zh }}</b>
           </span>

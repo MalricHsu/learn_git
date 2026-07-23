@@ -1,5 +1,6 @@
 <script setup>
 import { computed, nextTick, ref, shallowRef, watch } from "vue";
+import { useRoute } from "vue-router";
 import Terminal from "../components/Terminal.vue";
 import ChallengeRoadmap from "../components/challenge/ChallengeRoadmap.vue";
 import ChallengeBrief from "../components/challenge/ChallengeBrief.vue";
@@ -23,10 +24,20 @@ import {
 } from "../composables/useStore.js";
 import { shouldAwardMissionXp } from "../composables/progressRules.js";
 
+const route = useRoute();
 const firstOpen = challenges.findIndex(
   (item) => !store.completedMissions.includes(item.id),
 );
-const index = ref(firstOpen < 0 ? 0 : firstOpen);
+const furthestOpen = firstOpen < 0 ? challenges.length - 1 : firstOpen;
+
+// Deep link support: /game?c=<challenge id>. A challenge the reader has not
+// unlocked yet is ignored, so the URL can never skip the progression.
+function indexFromQuery(id) {
+  const position = challenges.findIndex((item) => item.id === id);
+  return position > -1 && position <= furthestOpen ? position : null;
+}
+
+const index = ref(indexFromQuery(route.query.c) ?? furthestOpen);
 const challenge = computed(() => challenges[index.value]);
 const engine = shallowRef(null);
 const terminalRef = ref(null);
@@ -121,7 +132,7 @@ function setupChallenge() {
       : "";
   engine.value = createGitEngine({
     ...c.seed,
-    greeting: `# 入職日誌\n# ${c.task.zh}${stepLine}`,
+    greeting: `# 入職任務 · ${c.title.zh}\n# 情境：${c.story.prompt}\n# 為什麼現在要做：${c.story.pressure}\n# 任務：${c.summary.zh}${stepLine}`,
     onRun: handleAction,
   });
   nextTick(() => terminalRef.value?.focus());
@@ -171,11 +182,9 @@ function selectChallenge(id) {
 function goNext() {
   if (index.value < challenges.length - 1) {
     index.value += 1;
-    nextTick(() => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-      document.body.scrollTop = 0;
-    });
+    // "instant" overrides the global `html { scroll-behavior: smooth }`, so
+    // the top of the page is reached before anything else can scroll.
+    nextTick(() => window.scrollTo({ top: 0, left: 0, behavior: "instant" }));
   }
 }
 
@@ -187,14 +196,32 @@ function collapseHints() {
 }
 
 watch(index, setupChallenge, { immediate: true });
+// Arriving from another link while already on this page.
+watch(
+  () => route.query.c,
+  (id) => {
+    const target = indexFromQuery(id);
+    if (target !== null) index.value = target;
+  },
+);
 watch(
   () => engine.value && engine.value.state.lastAction,
   (action) => {
     if (!action) return;
+    // Mid-way through a multi-step challenge the player is still typing, so
+    // pulling the page down to the feedback would steal the terminal away.
+    // Only move for an error or for the step that finishes the challenge.
+    if (
+      challenge.value.steps.length > 1 &&
+      action.success &&
+      !completedNow.value
+    ) {
+      return;
+    }
     nextTick(() =>
       feedbackRef.value?.scrollIntoView({
         behavior: "smooth",
-        block: "center",
+        block: "nearest",
       }),
     );
   },
@@ -205,20 +232,17 @@ watch(
   <div class="challenge-page wrap">
     <header class="challenge-head">
       <div class="challenge-head__intro">
-        <h1>Challenge Edition</h1>
+        <h1>闖關學習</h1>
         <p>看著 Git 的狀態一步步改變，理解每個指令真正做了什麼。</p>
       </div>
       <div class="challenge-progress">
         <div>
-          <span>TOTAL XP</span><b>{{ store.xp }} / {{ totalXp }}</b>
+          <span>累計 XP</span><b>{{ store.xp }} / {{ totalXp }}</b>
         </div>
         <div class="progress">
           <div class="progress__bar" :style="{ width: xpPercent + '%' }"></div>
         </div>
-        <small
-          >{{ completedCount }} / {{ challenges.length }} CHALLENGES
-          COMPLETE</small
-        >
+        <small>已完成 {{ completedCount }} / {{ challenges.length }} 關</small>
       </div>
     </header>
 
@@ -311,10 +335,11 @@ watch(
 }
 .challenge-head h1 {
   margin: 8px 0 0;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(34px, 3.2vw, 46px);
-  line-height: 0.98;
-  letter-spacing: -0.035em;
+  font-family: var(--serif-tc);
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
 }
 .challenge-head p:last-child {
   margin: 8px 0 0;
@@ -439,8 +464,9 @@ watch(
 }
 .challenge-complete h3 {
   margin: 0;
-  font-family: var(--display);
-  font-size: 22px;
+  font-family: var(--serif-tc);
+  font-weight: 900;
+  font-size: 20px;
 }
 .challenge-complete__desk {
   margin: 2px 0 3px;

@@ -24,17 +24,20 @@ test("wrong-answer feedback identifies given answer, solution, and Chinese expla
   assert.equal(source.includes("current.note.en"), false);
 });
 
-test("practice uses the Git Daily weekend edition layout", () => {
+test("practice uses the Git Daily editorial layout", () => {
   for (const value of [
-    "Practice Room",
-    "練習場",
-    "Weekend Practice Edition",
+    "測驗",
+    "選擇題",
+    "手寫題",
     "practice-edition",
     "practice-mode",
     "quiz-sheet",
     "editor-feedback",
   ]) assert.ok(source.includes(value), `render ${value}`);
 
+  // Section wording is Chinese and matches the nav.
+  assert.equal(source.includes("Practice Room"), false);
+  assert.equal(source.includes("Weekend Practice Edition"), false);
   assert.equal(source.includes("Two Ways to Drill"), false);
   assert.equal(source.includes("Mission Complete"), false);
   assert.equal((source.match(/<div v-else class="quiz-terminal"/g) || []).length, 1);

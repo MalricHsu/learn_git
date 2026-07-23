@@ -25,6 +25,8 @@ export const gitTeaching = {
   "remote-remove": { title: "移除遠端設定", whatHappened: "遠端名稱與網址從本機設定移除。", whyItMatters: "專案不再使用該同步目的地。", misconception: "這不會刪除遠端網站上的儲存庫。" },
   revert: { title: "用新版本安全撤銷", whatHappened: "Git 建立一個新 Commit 抵銷先前變更。", whyItMatters: "共享歷史保持完整，協作者不會突然失去提交。", misconception: "Revert 不會抹除舊 Commit，而是新增反向變更。" },
   "dangerous-remove-git": { title: "這會刪除整個 Git 歷史", whatHappened: "學習終端已阻擋刪除 .git 的 shell 指令。", whyItMatters: ".git 保存 Commit、Branch、Tag 與所有版本資料。", misconception: "刪除 .git 不是普通的取消設定，歷史可能無法復原。" },
+  "clean-dry": { title: "先預覽，再決定", whatHappened: "Git 列出「將會被刪除」的未追蹤檔案，但什麼都還沒刪。", whyItMatters: "這份清單是你唯一一次反悔的機會，先確認裡面沒有還沒 add 的新檔案。", misconception: "-n 不會刪任何東西；真正動手的是 -f。" },
+  clean: { title: "未追蹤檔案已被刪除", whatHappened: "工作目錄裡未被追蹤的檔案已從硬碟移除。", whyItMatters: "工作區回到乾淨狀態，只留下 Git 追蹤中的內容。", misconception: "這些檔案從未進過 Git，所以 reflog 與 reset 都救不回來。" },
   "not-git-command": { title: "這是 Git 學習終端", whatHappened: "輸入不是支援的 Git 指令，因此沒有改變狀態。", whyItMatters: "所有互動都在瀏覽器模擬器中安全進行。", misconception: "這裡不會執行 shell 或本機程式。" },
 };
 
