@@ -137,7 +137,7 @@ function next() {
   if (isLast.value) {
     const xp = score.value * 12;
     addXp(xp);
-    toast("Round Complete · 一回合結束", `${score.value}/${session.value.length} 正確 · +${xp} XP`, score.value >= 6 ? "success" : "warn");
+    toast("一回合結束", `${score.value}/${session.value.length} 正確 · +${xp} XP`, score.value >= 6 ? "success" : "warn");
     phase.value = "result";
   } else {
     index.value++;
@@ -162,10 +162,10 @@ onMounted(() => {
 const wrongOnes = computed(() => results.value.filter((r) => !r.correct));
 const grade = computed(() => {
   const pct = score.value / session.value.length;
-  if (pct === 1) return { en: "Flawless", zh: "全對，太強了" };
-  if (pct >= 0.7) return { en: "Well read", zh: "讀得很扎實" };
-  if (pct >= 0.4) return { en: "Getting there", zh: "漸入佳境" };
-  return { en: "Keep reading", zh: "再多讀幾遍" };
+  if (pct === 1) return { zh: "全對，太強了" };
+  if (pct >= 0.7) return { zh: "讀得很扎實" };
+  if (pct >= 0.4) return { zh: "漸入佳境" };
+  return { zh: "再多讀幾遍" };
 });
 
 const choiceCount = poolFor("choice").length;
@@ -177,39 +177,33 @@ const inputCount = poolFor("input").length;
     <!-- ===================== SELECT ===================== -->
     <template v-if="phase === 'select'">
       <header class="pr-head reveal">
-        <div class="practice-kicker"><span>Weekend Practice Edition</span><b>週末練習專刊</b></div>
-        <h1 class="pr-title">Practice Room</h1>
-        <p class="pr-title-zh">練習場</p>
+        <h1 class="pr-title">測驗</h1>
         <p class="u-serif pr-sub">選一種方式開始。每回合隨機抽出 {{ SESSION_SIZE }} 題，答題後立即閱讀正解與說明。</p>
       </header>
 
       <div class="practice-modes">
         <button class="practice-mode reveal" @click="start('choice')">
-          <span class="game-card__kicker">01 · Build Recognition</span>
           <h2>選擇題</h2>
-          <p class="mode-en">Multiple Choice</p>
           <p class="game-card__desc">讀情境，從四個指令中挑對的。最適合剛入門、建立語感。</p>
           <div class="game-card__meta">
             <span>入門</span><b>{{ choiceCount }} 題</b>
           </div>
-          <span class="game-card__cta">開始練習 <b>→</b></span>
+          <span class="game-card__cta">開始測驗 <b>→</b></span>
         </button>
 
         <button class="practice-mode reveal" @click="start('input')">
-          <span class="game-card__kicker">02 · Recall the Command</span>
           <h2>手寫題</h2>
-          <p class="mode-en">Terminal Input</p>
           <p class="game-card__desc">自己把完整指令打出來。空格、連字號、參數位置都要對——最像真的在敲終端機。</p>
           <div class="mode-terminal"><span>$</span><code>git ______</code></div>
           <div class="game-card__meta">
             <span>進階</span><b>{{ inputCount }} 題</b>
           </div>
-          <span class="game-card__cta">開始練習 <b>→</b></span>
+          <span class="game-card__cta">開始測驗 <b>→</b></span>
         </button>
       </div>
 
       <p class="pr-tip u-serif">
-        <span class="u-mono">TIP ·</span> Git 指令中的空格、連字號與參數位置都很重要。不確定狀態時，先 <code>git status</code>。
+        <span class="u-mono">小提醒 ·</span> Git 指令中的空格、連字號與參數位置都很重要。不確定狀態時，先 <code>git status</code>。
       </p>
     </template>
 
@@ -222,19 +216,19 @@ const inputCount = poolFor("input").length;
           <span class="u-mono quiz-count">
             {{ game === "mistakes" ? "錯題重練" : currentMode === "choice" ? "選擇題" : "手寫題" }} · 第 {{ index + 1 }} / {{ session.length }} 題
           </span>
-          <span class="u-mono quiz-score">SCORE {{ score }}</span>
+          <span class="u-mono quiz-score">答對 {{ score }}</span>
         </div>
         <div class="progress" style="margin-bottom: 40px"><div class="progress__bar" :style="{ width: progress + '%' }"></div></div>
 
         <article class="quiz-card quiz-sheet" :key="current.id">
           <div class="flex gap3 items-center" style="margin-bottom: 20px">
-            <span class="badge badge--solid">{{ current.cmd === "concept" ? "Concept 概念" : current.cmd }}</span>
+            <span class="badge badge--solid">{{ current.cmd === "concept" ? "概念" : current.cmd }}</span>
             <span class="badge" :class="{ 'badge--warn': current.difficulty === 2, 'badge--danger': current.difficulty === 3 }">
               <span class="dot"></span>{{ ["", "L1", "L2", "L3"][current.difficulty] }}
             </span>
           </div>
 
-          <h2 class="quiz-scenario quiz-scenario-zh">{{ current.scenario.zh }}</h2>
+          <h2 class="quiz-scenario">{{ current.scenario.zh }}</h2>
 
           <div class="quiz-hint">
             <button
@@ -275,7 +269,7 @@ const inputCount = poolFor("input").length;
             <div class="terminal">
               <div class="terminal__bar">
                 <span class="d r"></span><span class="d y"></span><span class="d g"></span>
-                <span class="title">type the command · 輸入指令</span>
+                <span class="title">輸入指令</span>
               </div>
               <div class="terminal__input" style="border-top: none">
                 <span class="p">$</span>
@@ -293,7 +287,7 @@ const inputCount = poolFor("input").length;
               </div>
             </div>
             <button v-if="!answered" class="btn u-mt5" :disabled="!inputVal.trim()" @click="submitInput">
-              Submit <span class="zh">送出</span>
+              送出
             </button>
           </div>
 
@@ -304,7 +298,7 @@ const inputCount = poolFor("input").length;
                 <span class="feedback__badge">{{ wasCorrect ? "✓" : "✕" }}</span>
                 <div>
                   <b>{{ wasCorrect ? "答對了" : "再看一次" }}</b>
-                  <small v-if="wasCorrect" class="u-serif">Excellent — 做得很好。</small>
+                  <small v-if="wasCorrect" class="u-serif">做得很好。</small>
                   <small v-else class="u-serif">別擔心，看正解就記住了。</small>
                 </div>
               </div>
@@ -321,7 +315,7 @@ const inputCount = poolFor("input").length;
                 <p>{{ current.note.zh }}</p>
               </div>
               <button class="btn" @click="next">
-                {{ isLast ? "See Results 看成績" : "Next 下一題" }} <span aria-hidden="true">→</span>
+                {{ isLast ? "看成績" : "下一題" }} <span aria-hidden="true">→</span>
               </button>
             </div>
           </Transition>
@@ -332,23 +326,22 @@ const inputCount = poolFor("input").length;
     <!-- ===================== RESULT ===================== -->
     <template v-else>
       <div class="result reveal in">
-        <p class="eyebrow" style="justify-content: center">Practice Report · 本回合成績</p>
+        <p class="result-kicker">本回合成績</p>
         <div class="result-score">
           <span class="result-num">{{ score }}</span>
           <span class="result-den">/ {{ session.length }}</span>
         </div>
-        <h2 class="result-grade">{{ grade.en }}</h2>
-        <p class="u-serif result-grade-zh">{{ grade.zh }}</p>
+        <h2 class="result-grade">{{ grade.zh }}</h2>
 
         <div class="result-actions">
           <button class="btn btn--lg" @click="restartRound">{{ game === "mistakes" ? "再練剩餘錯題" : "再玩一次" }}</button>
-          <button class="btn btn--ghost btn--lg" @click="backToSelect">Switch Game <span class="zh">換一種</span></button>
+          <button class="btn btn--ghost btn--lg" @click="backToSelect">換一種</button>
         </div>
 
         <div v-if="wrongOnes.length" class="review">
           <div class="flex between items-center" style="margin-bottom: 20px">
-            <div class="bi"><span class="en" style="font-size: 22px; font-weight: 800">Review</span><span class="zh">錯題複習</span></div>
-            <span class="u-mono" style="color: var(--ink-faint); font-size: 12px">{{ wrongOnes.length }} to revisit</span>
+            <h2 class="review-title">錯題複習</h2>
+            <span class="u-mono" style="color: var(--ink-faint); font-size: 12px">{{ wrongOnes.length }} 題待重看</span>
           </div>
           <div v-for="(r, i) in wrongOnes" :key="i" class="review-row">
             <div>
@@ -374,25 +367,13 @@ const inputCount = poolFor("input").length;
 
 /* Select */
 .pr-head { text-align: center; margin-bottom: 56px; }
-.pr-title { font-family: var(--display); font-weight: 900; font-size: clamp(38px, 6vw, 68px); margin: 16px 0 8px; letter-spacing: -.02em; }
+.pr-title { font-family: var(--serif-tc); font-weight: 900; font-size: clamp(26px, 3vw, 34px); margin: 0 0 8px; letter-spacing: -.01em; }
 .pr-sub { color: var(--ink-soft); max-width: 48ch; margin: 0 auto; font-size: 16px; }
 
-.game-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; max-width: 900px; margin: 0 auto; }
-.game-card { text-align: left; background: var(--paper-2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 36px; cursor: pointer; transition: transform .25s var(--ease), box-shadow .3s var(--ease), border-color .2s; display: flex; flex-direction: column; }
-.game-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); border-color: var(--primary); }
-.game-card__kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-faint); }
-.game-card__mark { font-size: 30px; color: var(--primary); margin: 20px 0 12px; }
-.game-card h2 { font-family: var(--display); font-size: 30px; margin: 0; }
-.game-card > .u-serif { color: var(--ink-soft); margin: 2px 0 0; font-size: 15px; }
 .game-card__desc { color: var(--ink-soft); font-size: 14px; line-height: 1.7; margin: 18px 0 24px; flex: 1; }
 .game-card__meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .game-card__meta .u-mono { font-size: 12px; color: var(--ink-faint); }
 .game-card__cta { font-family: var(--mono); font-size: 13px; letter-spacing: .05em; color: var(--primary); }
-.game-card--dark { background: var(--code-bg); border-color: var(--code-line); }
-.game-card--dark .game-card__kicker { color: #85817a; }
-.game-card--dark h2 { color: var(--code-fg); }
-.game-card--dark > .u-serif, .game-card--dark .game-card__desc { color: #b3aea3; }
-.game-card--dark .game-card__mark, .game-card--dark .game-card__cta { color: #9ec7ae; }
 
 .pr-tip { text-align: center; margin-top: 48px; color: var(--ink-soft); font-size: 14px; }
 .pr-tip code { font-family: var(--mono); color: var(--primary); background: var(--secondary-2); padding: 2px 7px; border-radius: 4px; }
@@ -405,8 +386,6 @@ const inputCount = poolFor("input").length;
 .quiz-count { color: var(--ink-soft); letter-spacing: .08em; }
 .quiz-score { color: var(--warning); letter-spacing: .1em; }
 .quiz-card { background: var(--paper-2); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 40px; }
-.quiz-scenario { font-family: var(--display); font-size: clamp(22px, 3.2vw, 30px); line-height: 1.3; margin: 0; }
-.quiz-scenario-zh { color: var(--ink-soft); font-size: 16px; margin: 10px 0 0; }
 .quiz-hint { margin-top: 22px; }
 .quiz-hint__toggle { padding: 8px 14px; font-size: 12px; }
 .quiz-hint__text { margin: 12px 0 0; padding: 14px 16px; border-left: 3px solid var(--warning); background: color-mix(in srgb, var(--warning) 7%, transparent); color: var(--ink-soft); font-size: 14px; line-height: 1.7; }
@@ -420,7 +399,7 @@ const inputCount = poolFor("input").length;
 .feedback__badge { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; font-size: 15px; flex-shrink: 0; color: var(--paper-2); }
 .feedback--ok .feedback__badge { background: var(--success); }
 .feedback--no .feedback__badge { background: var(--danger); }
-.feedback__head b { font-family: var(--display); font-size: 18px; }
+.feedback__head b { font-family: var(--serif-tc); font-weight: 700; font-size: 18px; }
 .feedback__head small { display: block; color: var(--ink-soft); font-size: 13px; }
 .feedback__label { font-size: 10px; letter-spacing: .15em; color: var(--ink-faint); display: block; margin-bottom: 6px; }
 .feedback__answer { margin-bottom: 18px; }
@@ -430,13 +409,13 @@ const inputCount = poolFor("input").length;
 .feedback .btn { margin-top: 20px; }
 
 /* Result */
-.result { max-width: 640px; margin: 0 auto; text-align: center; }
-.result-score { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin: 20px 0 8px; }
+.result { max-width: 640px; }
+.result-score { display: flex; align-items: baseline; gap: 10px; margin: 22px 0 6px; }
 .result-num { font-family: var(--display); font-weight: 900; font-size: 96px; line-height: 1; color: var(--primary); }
 .result-den { font-family: var(--display); font-size: 32px; color: var(--ink-faint); }
-.result-grade { font-family: var(--display); font-size: 32px; margin: 8px 0 2px; }
-.result-grade-zh { color: var(--ink-soft); margin: 0; }
-.result-actions { display: flex; gap: 16px; justify-content: center; margin: 36px 0 56px; flex-wrap: wrap; }
+.result-grade { font-family: var(--serif-tc); font-weight: 900; font-size: 28px; margin: 8px 0 2px; }
+.review-title { margin: 0; font-family: var(--serif-tc); font-size: 20px; font-weight: 900; }
+.result-actions { display: flex; gap: 14px; margin: 36px 0 56px; flex-wrap: wrap; }
 .result-perfect { color: var(--ink-soft); }
 
 .review { text-align: left; border-top: 3px double var(--ink); padding-top: 32px; }
@@ -451,19 +430,14 @@ const inputCount = poolFor("input").length;
 /* Git Daily weekend practice edition */
 .practice { --practice-body: 16px; padding-top: 30px; padding-bottom: 72px; }
 .pr-head { text-align: left; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px double var(--ink); }
-.practice-kicker { display: flex; justify-content: space-between; align-items: baseline; gap: 20px; font-family: var(--mono); font-size: 14px; letter-spacing: .14em; text-transform: uppercase; }
-.practice-kicker b { font-family: var(--serif-tc); font-size: 17px; letter-spacing: .04em; }
-.pr-title { margin: 22px 0 0; font-family: Georgia,"Times New Roman",serif; font-size: clamp(42px,5vw,64px); font-weight: 700; line-height: 1; }
-.pr-title-zh { margin: 10px 0 0; font-family: var(--serif-tc); font-size: 25px; color: var(--primary); }
+.pr-title { margin: 0; font-family: var(--serif-tc); font-size: clamp(26px,3vw,34px); font-weight: 900; line-height: 1.1; }
 .pr-sub { max-width: 64ch; margin: 18px 0 0; font-size: var(--practice-body); line-height: 1.8; }
 .practice-modes { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid var(--ink); border-bottom: 1px solid var(--ink); }
 .practice-mode { min-width: 0; padding: 30px 34px 26px; border: 0; border-right: 1px solid var(--border); background: transparent; color: var(--ink); text-align: left; cursor: pointer; transition: background .18s; }
 .practice-mode:last-child { border-right: 0; }
 .practice-mode:hover { background: var(--secondary-2); }
 .practice-mode:focus-visible { outline-offset: -4px; }
-.practice-mode .game-card__kicker { display: block; font-family: var(--mono); font-size: 14px; letter-spacing: .12em; color: var(--primary); text-transform: uppercase; }
-.practice-mode h2 { margin: 24px 0 0; font-family: var(--display); font-size: 38px; }
-.mode-en { margin: 4px 0 0; font-family: var(--mono); font-size: 16px; color: var(--ink-faint); }
+.practice-mode h2 { margin: 0; font-family: var(--serif-tc); font-weight: 900; font-size: 30px; }
 .practice-mode .game-card__desc { max-width: 45ch; margin: 22px 0; font-family: var(--serif-tc); font-size: var(--practice-body); line-height: 1.75; color: var(--ink-soft); }
 .mode-terminal { display: flex; gap: 12px; margin: 2px 0 20px; padding: 13px 16px; background: var(--terminal-bg); color: var(--success); font-family: var(--mono); font-size: var(--practice-body); }
 .mode-terminal code { color: var(--code-fg); }
@@ -478,8 +452,7 @@ const inputCount = poolFor("input").length;
 .quiz-top { margin-bottom: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--ink); font-size: 14px; }
 .quiz-quit,.quiz-count,.quiz-score { font-size: 14px; }
 .quiz-sheet { padding: 32px 38px 36px; border: 1px solid var(--border); border-top: 4px double var(--ink); border-radius: 0; background: var(--paper-2); }
-.quiz-scenario { max-width: 28ch; font-family: Georgia,"Times New Roman",serif; font-size: clamp(27px,3vw,38px); line-height: 1.25; }
-.quiz-scenario-zh { max-width: 34ch; margin-top: 0; font-family: var(--serif-tc); font-size: clamp(24px,2.8vw,34px); line-height: 1.5; color: var(--ink); }
+.quiz-scenario { max-width: 34ch; margin: 0; font-family: var(--serif-tc); font-weight: 900; font-size: clamp(24px,2.8vw,34px); line-height: 1.55; }
 .quiz-hint__toggle { padding: 10px 16px; border-radius: 0; font-size: 14px; }
 .quiz-hint__text { padding: 14px 18px; background: transparent; font-size: var(--practice-body); }
 .quiz-hint__text .u-mono { font-size: 14px; }
@@ -492,14 +465,14 @@ const inputCount = poolFor("input").length;
 .quiz-terminal .terminal { border-radius: 0; }
 
 .editor-feedback { padding: 22px 0 0; border: 0; border-top: 3px double var(--ink); border-radius: 0; background: transparent; }
-.feedback__head b { font-family: var(--display); font-size: 22px; }
+.feedback__head b { font-family: var(--serif-tc); font-weight: 900; font-size: 20px; }
 .feedback__head small,.feedback__label,.feedback__note p { font-size: 14px; }
 .feedback__answer code { border-radius: 0; font-size: var(--practice-body); }
 .feedback__note p { font-size: var(--practice-body); }
 
 .result { max-width: 760px; }
-.result .eyebrow { padding-bottom: 14px; border-bottom: 3px double var(--ink); font-size: 14px; }
-.result-grade-zh,.result-perfect,.review-q { font-size: var(--practice-body); }
+.result-kicker { margin: 0 0 4px; padding-bottom: 14px; border-bottom: 3px double var(--ink); font-family: var(--serif-tc); font-size: 14px; color: var(--ink-faint); }
+.result-perfect,.review-q { font-size: var(--practice-body); }
 .review { padding-top: 24px; }
 .review-answers,.review-link { font-size: 14px; }
 

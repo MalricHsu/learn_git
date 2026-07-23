@@ -27,10 +27,13 @@
   --terminal-bg: #22211D;
 
   /* Type */
-  --display: "Playfair Display", Georgia, "Times New Roman", serif;
+  /* Latin faces carry no CJK glyphs, so Noto Serif TC sits right behind each
+     of them — otherwise any Chinese we forget to tag falls back to whatever
+     the OS picks and stops matching the rest of the site. */
+  --display: "Playfair Display", "Noto Serif TC", Georgia, "Times New Roman", serif;
   --serif-tc: "Noto Serif TC", "Songti TC", serif;
-  --body: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --mono: "JetBrains Mono", "SF Mono", ui-monospace, monospace;
+  --body: "Archivo", "Noto Serif TC", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", "Noto Serif TC", "SF Mono", ui-monospace, monospace;
 
   /* Spacing — 8pt system */
   --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
@@ -79,7 +82,7 @@
 
 /* ---------- Reset & base ---------- */
 * { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; font-optical-sizing: auto; }
 body {
   margin: 0;
   background: var(--paper);
@@ -390,14 +393,6 @@ code, .mono { font-family: var(--mono); }
 .reveal.in { opacity: 1; transform: none; transition: opacity .7s var(--ease), transform .7s var(--ease); }
 
 /* ---------- Footer ---------- */
-.footer { border-top: 3px double var(--ink); margin-top: var(--s9); padding: var(--s7) 0 var(--s6); }
-.footer__grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: var(--s6); }
-.footer h5 { font-family: var(--mono); font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--ink-faint); margin: 0 0 var(--s4); }
-.footer a { display: block; color: var(--ink-soft); font-size: 14px; padding: 4px 0; }
-.footer a:hover { color: var(--primary); }
-.footer__brand h3 { font-family: var(--display); font-weight: 900; font-size: 28px; margin: 0 0 var(--s2); }
-.footer__brand p { color: var(--ink-faint); font-size: 13px; font-family: var(--serif-tc); max-width: 34ch; }
-.footer__bottom { display: flex; justify-content: space-between; margin-top: var(--s7); padding-top: var(--s4); border-top: var(--hairline); font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--ink-faint); text-transform: uppercase; }
 
 /* ---------- Utilities ---------- */
 .u-center { text-align: center; }

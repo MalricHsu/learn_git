@@ -27,6 +27,13 @@ function scroll() {
   nextTick(() => { if (bodyEl.value) bodyEl.value.scrollTop = bodyEl.value.scrollHeight; });
 }
 watch(() => props.engine.state.lines.length, scroll);
+// A new engine means a new challenge — start with an empty prompt and no
+// recallable history from the previous one.
+watch(() => props.engine, () => {
+  input.value = "";
+  history.value = [];
+  hIndex.value = -1;
+});
 function focus() { inputEl.value?.focus({ preventScroll: true }); }
 defineExpose({ focus });
 </script>

@@ -356,6 +356,23 @@ export function createGitEngine(options = {}) {
         return finish(raw, { command, effect: "rebase", branch: target, teachingKey: "rebase" });
       }
 
+      case "clean": {
+        const dryRun = parts.includes("-n") || parts.includes("--dry-run");
+        const forced = parts.some((part) => /^-[a-zA-Z]*f/.test(part));
+        const targets = [...state.workingDirectory];
+        if (!targets.length) return fail(raw, "clean-empty", "Nothing to clean, working tree is clean.", command);
+        if (dryRun) {
+          targets.forEach((file) => print(`Would remove ${esc(file)}`, "term-dim"));
+          return finish(raw, { command, effect: "observe-clean", files: targets, teachingKey: "clean-dry" });
+        }
+        if (!forced) {
+          return fail(raw, "clean-no-force", "fatal: clean.requireForce defaults to true and neither -f nor -n was given; refusing to clean", command);
+        }
+        targets.forEach((file) => print(`Removing ${esc(file)}`, "term-ok"));
+        state.workingDirectory = [];
+        return finish(raw, { command, effect: "clean", files: targets, teachingKey: "clean" });
+      }
+
       case "reflog":
         state.reflog.forEach((entry, index) => print(`${entry.hash || "0000000"} HEAD@{${index}}: ${esc(entry.action)}`));
         return finish(raw, { command, effect: "observe-reflog", teachingKey: "reflog" });

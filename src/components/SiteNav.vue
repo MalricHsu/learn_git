@@ -42,25 +42,25 @@ watch(
             active: route.name === 'reference' || route.name === 'command',
           }"
           @click="closeMenu"
-          >手冊</RouterLink
+          >指令手冊</RouterLink
         >
         <RouterLink
           to="/game"
           :class="{ active: route.name === 'game' }"
           @click="closeMenu"
-          >闖關</RouterLink
+          >闖關學習</RouterLink
         >
         <RouterLink
           to="/practice"
           :class="{ active: route.name === 'practice' }"
           @click="closeMenu"
-          >練習</RouterLink
+          >測驗</RouterLink
         >
         <RouterLink
           to="/favorites"
           :class="{ active: route.name === 'favorites' }"
           @click="closeMenu"
-          >收藏</RouterLink
+          >收藏剪報</RouterLink
         >
         <RouterLink
           to="/mistakes"

@@ -13,7 +13,7 @@ test("roadmap and brief expose Chinese challenge metadata and three hint levels"
   assert.ok(brief.includes("challenge.hints"));
   assert.equal(roadmap.includes("challenge.summary.zh"), false);
   assert.ok(roadmap.includes("visibleChallenges"));
-  assert.ok(roadmap.includes("cardCode"));
+  assert.ok(roadmap.includes("challenge.code"));
   assert.ok(roadmap.includes("roadmap__track"));
   assert.ok(roadmap.includes("scrollBy"));
   assert.match(roadmap, /overflow-x:\s*auto/);
@@ -40,4 +40,18 @@ test("visualization uses tabs while the game renders dynamic teaching feedback",
   assert.equal(workflow.includes("{{ state[zone.key].length }}"), false);
   assert.equal(container.includes("Repository Status"), false);
   assert.match(tabs, /border-radius:\s*0/);
+});
+
+test("game terminal opens each challenge with a compact story prompt", async () => {
+  const game = await readFile(new URL("../src/views/Game.vue", import.meta.url), "utf8");
+  for (const field of ["c.title.zh", "c.story.prompt", "c.story.pressure", "c.summary.zh"]) {
+    assert.ok(game.includes(field), field);
+  }
+  assert.ok(game.includes("入職任務"));
+  assert.ok(game.includes("# 情境："));
+  assert.ok(game.includes("# 為什麼現在要做："));
+  assert.ok(game.includes("# 任務："));
+  assert.equal(game.includes("c.story.opening"), false);
+  assert.equal(game.includes("c.story.stakes"), false);
+  assert.equal(game.includes("c.story.payoff"), false);
 });
