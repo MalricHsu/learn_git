@@ -64,3 +64,18 @@ test("front-page supporting copy remains comfortably readable", () => {
   assert.match(home, /\.chapter-edition > span,[^}]*font-size:\s*14px/s);
   assert.match(home, /\.reference-invitation span\s*\{[^}]*font-size:\s*14px/s);
 });
+
+test("chapter editions balance seven chapters across responsive columns", () => {
+  assert.match(
+    home,
+    /\.chapter-editions__grid\s*\{[^}]*grid-template-columns:\s*repeat\(4,\s*1fr\)/s,
+  );
+  assert.match(
+    home,
+    /@media \(max-width:\s*900px\)[\s\S]*?\.chapter-editions__grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*1fr\)/,
+  );
+  assert.match(
+    home,
+    /@media \(max-width:\s*600px\)[\s\S]*?\.chapter-editions__grid\s*\{[^}]*grid-template-columns:\s*1fr/,
+  );
+});

@@ -3,12 +3,13 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
-const [favorites, mistakes, router, nav, footer] = await Promise.all([
+const [favorites, mistakes, router, nav, footer, styles] = await Promise.all([
   read("../src/views/Favorites.vue"),
   read("../src/views/Mistakes.vue"),
   read("../src/router.js"),
   read("../src/components/SiteNav.vue"),
   read("../src/components/SiteFooter.vue"),
+  read("../src/style.css"),
 ]);
 
 test("favorites page is an editorial saved-command collection", () => {
@@ -40,4 +41,52 @@ test("footer links to the new pages and credits 7lun in English", () => {
   assert.ok(footer.includes('to="/favorites"'));
   assert.ok(footer.includes('to="/mistakes"'));
   assert.ok(footer.includes("© 2026 Git Daily · Made by 7lun"));
+});
+
+test("mobile navigation exposes and closes an accessible menu", () => {
+  assert.ok(nav.includes('id="primary-menu"'));
+  assert.ok(nav.includes(':aria-expanded="menuOpen"'));
+  assert.ok(nav.includes('aria-controls="primary-menu"'));
+  assert.ok(nav.includes('class="icon-btn subnav__menu-toggle"'));
+  assert.ok(nav.includes('@click="closeMenu"'));
+  assert.match(
+    nav,
+    /watch\(\s*\(\) => route\.fullPath,[\s\S]*?menuOpen\.value = false/,
+  );
+});
+
+test("mobile navigation defines a compact responsive menu", () => {
+  assert.match(
+    styles,
+    /@media \(max-width:\s*720px\)[\s\S]*?\.subnav__menu-toggle\s*\{[^}]*display:\s*grid/,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width:\s*720px\)[\s\S]*?\.subnav__links\s*\{[^}]*display:\s*none/,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width:\s*720px\)[\s\S]*?\.subnav__links\.is-open\s*\{[^}]*display:\s*flex/,
+  );
+});
+
+test("mobile footer keeps its brand full width and link groups in two columns", () => {
+  assert.equal(
+    (footer.match(/class="footer__links(?: footer__links--primary)?"/g) || [])
+      .length,
+    3,
+  );
+  assert.ok(footer.includes("footer__links--primary"));
+  assert.match(
+    styles,
+    /@media \(max-width:\s*720px\)[\s\S]*?\.footer__grid\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width:\s*720px\)[\s\S]*?\.footer__brand\s*\{[^}]*grid-column:\s*1\s*\/\s*-1/,
+  );
+  assert.match(
+    styles,
+    /@media \(max-width:\s*720px\)[\s\S]*?\.footer__links--primary\s*\{[^}]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/,
+  );
 });

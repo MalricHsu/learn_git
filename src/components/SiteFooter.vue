@@ -13,7 +13,7 @@ import { RouterLink } from "vue-router";
             EST. 2026 · PRINTED DAILY FOR CURIOUS BEGINNERS
           </p>
         </div>
-        <div>
+        <div class="footer__links footer__links--primary">
           <h5>版面</h5>
           <RouterLink to="/">首頁</RouterLink>
           <RouterLink to="/reference">指令手冊</RouterLink>
@@ -22,13 +22,13 @@ import { RouterLink } from "vue-router";
           <RouterLink to="/favorites">收藏剪報</RouterLink>
           <RouterLink to="/mistakes">錯題簿</RouterLink>
         </div>
-        <div>
+        <div class="footer__links">
           <h5>主題</h5>
           <RouterLink to="/reference/git-init">開始使用</RouterLink>
           <RouterLink to="/reference/git-branch">分支管理</RouterLink>
           <RouterLink to="/reference/git-push">遠端儲存庫</RouterLink>
         </div>
-        <div>
+        <div class="footer__links">
           <h5>讀者</h5>
           <a href="#">指令搜尋</a>
           <RouterLink to="/favorites">收藏</RouterLink>
